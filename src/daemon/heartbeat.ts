@@ -1,7 +1,7 @@
 import { loadConfig } from '../core/config.js';
 import { listAgents } from '../core/agent.js';
 import { updateAgentFrontmatter } from '../core/agent-parser.js';
-import { getAgentFile } from '../core/vault.js';
+import { getAgentFile } from '../core/paths.js';
 import { saveDaemonState } from './state.js';
 import { isRunning } from './process-registry.js';
 import { isDue, getNextRun, executeScheduledRun } from './modes/scheduled.js';
@@ -56,7 +56,7 @@ async function tick(): Promise<void> {
   }
 
   // Refresh agent list
-  const agents = await listAgents(config.vault_path);
+  const agents = await listAgents(config.cx_path);
 
   // Update state with current agents
   for (const agent of agents) {
@@ -145,13 +145,13 @@ async function handleWatcher(config: CxConfig, agent: AgentFile, agentState: Dae
   if (isInCooldown(agentState)) return;
 
   // Run watcher check
-  const watchResult = await runWatcherCheck(config.vault_path, agent);
+  const watchResult = await runWatcherCheck(config.cx_path, agent);
 
   if (watchResult.error) {
     agentState.consecutive_failures = (agentState.consecutive_failures ?? 0) + 1;
     if (agentState.consecutive_failures >= 3) {
       // Auto-pause after 3 consecutive failures
-      await updateAgentFrontmatter(getAgentFile(config.vault_path, agent.frontmatter.name), { status: 'paused' });
+      await updateAgentFrontmatter(getAgentFile(config.cx_path, agent.frontmatter.name), { status: 'paused' });
       agentState.status = 'paused';
       await dispatch(config, agent.frontmatter, {
         event: 'failure',
@@ -208,7 +208,7 @@ async function handlePersistent(config: CxConfig, agent: AgentFile, agentState: 
   if (isSessionExpired(agent, agentState)) {
     agentState.session_id = undefined;
     agentState.status = 'stopped';
-    await updateAgentFrontmatter(getAgentFile(config.vault_path, agent.frontmatter.name), { status: 'stopped' });
+    await updateAgentFrontmatter(getAgentFile(config.cx_path, agent.frontmatter.name), { status: 'stopped' });
     return;
   }
 

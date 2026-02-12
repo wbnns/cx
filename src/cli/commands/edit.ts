@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { spawn } from 'node:child_process';
 import { loadConfig } from '../../core/config.js';
-import { getAgentFile } from '../../core/vault.js';
+import { getAgentFile } from '../../core/paths.js';
 import chalk from 'chalk';
 
 export const editCommand = new Command('edit')
@@ -9,7 +9,7 @@ export const editCommand = new Command('edit')
   .argument('<name>', 'Agent name')
   .action(async (name: string) => {
     const config = await loadConfig();
-    const filePath = getAgentFile(config.vault_path, name);
+    const filePath = getAgentFile(config.cx_path, name);
 
     const editor = process.env.EDITOR || process.env.VISUAL || 'vi';
     const child = spawn(editor, [filePath], { stdio: 'inherit' });

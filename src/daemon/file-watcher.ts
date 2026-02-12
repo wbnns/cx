@@ -1,15 +1,15 @@
 import { watch } from 'chokidar';
 import type { FSWatcher } from 'chokidar';
 import { parseAgentFile } from '../core/agent-parser.js';
-import { getAgentsDir } from '../core/vault.js';
+import { getAgentsDir } from '../core/paths.js';
 import type { AgentFile } from '../types/index.js';
 
 export type AgentChangeCallback = (event: 'add' | 'change' | 'unlink', name: string, agent?: AgentFile) => void;
 
 let watcher: FSWatcher | null = null;
 
-export function startFileWatcher(vaultPath: string, callback: AgentChangeCallback): void {
-  const agentsDir = getAgentsDir(vaultPath);
+export function startFileWatcher(cxPath: string, callback: AgentChangeCallback): void {
+  const agentsDir = getAgentsDir(cxPath);
 
   watcher = watch(`${agentsDir}/*.md`, {
     ignoreInitial: true,

@@ -9,7 +9,7 @@ import { writeRunLog } from '../../storage/run-logger.js';
 import { recordCost } from '../../storage/cost-tracker.js';
 import { dispatch } from '../../notifications/dispatcher.js';
 import { loadSecrets } from '../../secrets/loader.js';
-import { getWatchersDir } from '../../core/vault.js';
+import { getWatchersDir } from '../../core/paths.js';
 import { getWatchScript, getMaxBudget, getTools } from '../../core/frontmatter-accessors.js';
 import type { AgentFile, DaemonAgentState, CxConfig } from '../../types/index.js';
 
@@ -23,13 +23,13 @@ export interface WatcherResult {
 }
 
 export async function runWatcherCheck(
-  vaultPath: string,
+  cxPath: string,
   agent: AgentFile,
 ): Promise<WatcherResult> {
   const scriptName = getWatchScript(agent.frontmatter);
   if (!scriptName) throw new Error('No watcher script configured');
 
-  const scriptPath = join(getWatchersDir(vaultPath), scriptName);
+  const scriptPath = join(getWatchersDir(cxPath), scriptName);
   const harnessPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'watcher-harness.js');
 
   return new Promise<WatcherResult>((resolve) => {
@@ -97,7 +97,7 @@ export async function executeWatcherRun(
 ): Promise<void> {
   const prompt = await buildContext({
     agent,
-    vaultPath: config.vault_path,
+    cxPath: config.cx_path,
     watcherContext,
     includeArchives: true,
   });
@@ -114,10 +114,10 @@ export async function executeWatcherRun(
     timeoutMs: 600000,
   });
 
-  await writeRunLog(config.vault_path, agent.frontmatter, result);
-  await recordCost(config.vault_path, agent.frontmatter, result);
+  await writeRunLog(config.cx_path, agent.frontmatter, result);
+  await recordCost(config.cx_path, agent.frontmatter, result);
 
-  await appendMemoryEntry(config.vault_path, agent.frontmatter.name, {
+  await appendMemoryEntry(config.cx_path, agent.frontmatter.name, {
     timestamp: new Date().toISOString(),
     type: 'run_result',
     content: `**Triggered by watcher**\n**Status**: ${result.is_error ? 'ERROR' : 'SUCCESS'}\n**Cost**: $${result.total_cost_usd.toFixed(4)}\n\n${result.result.slice(0, 2000)}`,

@@ -17,7 +17,8 @@
       "Bash(npx vitest run:*)",
       "Bash(textutil -convert txt -stdout:*)",
       "Bash(npm run build:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(git mv:*)"
     ]
   }
 }

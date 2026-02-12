@@ -11,7 +11,7 @@ export const listCommand = new Command('list')
   .option('--status <status>', 'Filter by status')
   .action(async (opts) => {
     const config = await loadConfig();
-    let agents = await listAgents(config.vault_path);
+    let agents = await listAgents(config.cx_path);
 
     if (opts.mode) agents = agents.filter(a => a.frontmatter.execution.mode === opts.mode);
     if (opts.category) agents = agents.filter(a => a.frontmatter.categories?.includes(opts.category));

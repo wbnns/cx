@@ -1,6 +1,6 @@
 # cx User Guide & Operations Manual
 
-**cx** (Claude Extender) is a personal agent management system for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It lets you create autonomous agents that run on schedules, watch for conditions, or maintain persistent sessions — all managed through markdown files in your Obsidian vault.
+**cx** (Claude Extender) is a personal agent management system for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It lets you create autonomous agents that run on schedules, watch for conditions, or maintain persistent sessions — all managed through markdown files in your cx directory.
 
 ---
 
@@ -23,8 +23,7 @@
 - **Node.js 20+** (for cx daemon and watcher scripts)
 - **Claude Code CLI** installed and authenticated (`claude` command available)
 - **Anthropic API key** with sufficient credits
-- **Obsidian** installed (desktop recommended; mobile for viewing)
-- **Git** (optional, for vault version control)
+- **Git** (optional, for version control)
 
 ### 1.2 Install cx
 
@@ -36,16 +35,16 @@ cx --version
 # cx 1.0.0
 ```
 
-### 1.3 Initialize Your Vault
+### 1.3 Initialize Your Directory
 
-cx needs to know where your Obsidian vault is. Run `init` from inside your vault directory:
+cx needs to know your cx directory. Run `init` from inside your cx directory:
 
 ```bash
-cd ~/Documents/MyVault
+cd ~/my-project
 cx init
 ```
 
-This creates the vault folder structure and a config file at `~/.config/cx/config.yaml`:
+This creates the directory structure and a config file at `~/.config/cx/config.yaml`:
 
 ```
 cx/agents/
@@ -60,7 +59,7 @@ The generated config file:
 
 ```yaml
 # ~/.config/cx/config.yaml
-vault_path: ~/Documents/MyVault
+cx_path: ~/my-project
 cx_folder: cx
 timezone: America/Los_Angeles
 daemon:
@@ -79,7 +78,7 @@ compaction:
 
 ### 1.4 Configure Secrets
 
-Secrets live outside the vault so they're never synced or committed to Git:
+Secrets live outside the cx directory so they're never synced or committed to Git:
 
 ```bash
 # Global secrets (available to all agents)
@@ -112,13 +111,6 @@ cx daemon logs --follow
 ```
 
 The daemon must be running for scheduled, watcher, and persistent agents to execute automatically. Manual triggers via `cx start` also require the daemon.
-
-### 1.6 Obsidian Plugins (Recommended)
-
-cx works with vanilla Obsidian, but these community plugins enhance the experience:
-
-- **Dataview** — Powers `dashboard.md` with live queries across agent files and run logs.
-- **Templater** — Enables the agent and run log templates in `_templates/`.
 
 ---
 
@@ -190,9 +182,9 @@ Run log: cx/runs/2026-02-12/surf-report-143500.md
 Memory updated: cx/memory/surf-report/current.md
 ```
 
-### Step 3: Verify in Obsidian
+### Step 3: Verify the output
 
-Open your vault in Obsidian. You'll see:
+Check your cx directory. You'll see:
 
 - **`cx/agents/surf-report.md`** — Your agent file with updated `last_run` and `total_runs` frontmatter
 - **`cx/runs/2026-02-12/surf-report-143500.md`** — The run log with output, token usage, and timing
@@ -248,7 +240,7 @@ Open an agent's markdown file in your editor.
 cx edit surf-report
 ```
 
-After saving, the daemon detects the file change and applies new config on the next tick. You can also edit agent files directly in Obsidian.
+After saving, the daemon detects the file change and applies new config on the next tick. You can also edit agent files directly with any text editor.
 
 ### 3.4 `cx start`
 
@@ -300,7 +292,7 @@ Delete old-experiment?
 
 Use `-f` to skip confirmation: `cx delete old-experiment -f`
 
-Deleted agent files are moved to `cx/.trash/` so you can restore them from Obsidian.
+Deleted agent files are moved to `cx/.trash/` so you can restore them later.
 
 ### 3.8 `cx logs`
 
@@ -527,7 +519,7 @@ The "Persistent Notes" section at the top of `current.md` is special — it **su
 - NE wind = good conditions at Norte
 ```
 
-Agents can add to this section via their output. You can also edit it directly in Obsidian to seed an agent with knowledge.
+Agents can add to this section via their output. You can also edit it directly to seed an agent with knowledge.
 
 ### 5.3 Manual Compaction
 
@@ -539,7 +531,7 @@ cx compact surf-report --dry-run   # Preview without executing
 
 ### 5.4 Viewing Archives
 
-Archives are regular markdown files in `cx/memory/<agent>/archive/`. Open them in Obsidian or via CLI:
+Archives are regular markdown files in `cx/memory/<agent>/archive/`. View them in any text editor or via CLI:
 
 ```bash
 cx memory surf-report --archive
@@ -661,9 +653,3 @@ notifications:
 1. Verify the secret group exists: `cx secrets list`
 2. Check that `env_ref` in the agent frontmatter matches the group name.
 3. Verify the specific key: `cx secrets get <group> <KEY>`
-
-### Obsidian not showing run logs
-
-1. Check that the Dataview plugin is installed and enabled.
-2. Verify run log files exist in `cx/runs/<date>/`.
-3. Refresh Dataview: Ctrl/Cmd+P → "Dataview: Force Refresh".

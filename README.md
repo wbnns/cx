@@ -1,6 +1,6 @@
 # cx — Claude Extender
 
-Autonomous agent management for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Create agents that run on schedules, watch for conditions, or maintain persistent sessions — all defined as markdown files in your Obsidian vault.
+Autonomous agent management for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Create agents that run on schedules, watch for conditions, or maintain persistent sessions — all defined as markdown files in your **cx directory**.
 
 ## What It Does
 
@@ -10,7 +10,7 @@ cx runs a background daemon that manages your agents:
 - **Watcher agents** run lightweight check scripts and trigger Claude only when conditions are met (new emails, page changes, price alerts)
 - **Persistent agents** maintain long-running sessions with heartbeats and checkpoints
 
-Every agent is a markdown file with YAML frontmatter. Instructions go in the body, configuration goes in the frontmatter. Run logs, memory, and costs are all stored as markdown in your vault — visible in Obsidian with full backlinks and search.
+Every agent is a markdown file with YAML frontmatter. Instructions go in the body, configuration goes in the frontmatter. Run logs, memory, and costs are all stored as markdown — browsable as plain markdown with full backlinks and search.
 
 ## Quick Start
 
@@ -18,8 +18,8 @@ Every agent is a markdown file with YAML frontmatter. Instructions go in the bod
 # Install
 npm install -g cx-agent
 
-# Initialize from your vault directory
-cd ~/Documents/MyVault
+# Initialize from your cx directory
+cd ~/my-project
 cx init
 
 # Configure secrets
@@ -150,7 +150,7 @@ When memory exceeds a token threshold, cx automatically compacts it — summariz
 
 ## Secrets
 
-Secrets are stored outside the vault at `~/.config/cx/secrets/` so they're never synced or committed:
+Secrets are stored outside the cx directory at `~/.config/cx/secrets/` so they're never synced or committed:
 
 ```bash
 cx secrets set global API_KEY sk-xxx
@@ -184,10 +184,10 @@ resource_limits:
   max_cost_per_day_usd: 5.00  # persistent agents
 ```
 
-## Vault Structure
+## Directory Structure
 
 ```
-MyVault/
+my-project/
   cx/
     agents/           # Agent markdown files
     watchers/         # Watcher check scripts
@@ -196,7 +196,7 @@ MyVault/
     _templates/       # Templates for new agents
     .trash/           # Deleted agents (recoverable)
     costs.md          # Cost ledger
-    dashboard.md      # Obsidian dashboard
+    dashboard.md      # Dashboard
 ```
 
 ## Configuration
@@ -204,7 +204,7 @@ MyVault/
 Global config lives at `~/.config/cx/config.yaml`:
 
 ```yaml
-vault_path: ~/Documents/MyVault
+cx_path: ~/my-project
 claude_path: claude
 default_model: sonnet
 timezone: America/Los_Angeles
@@ -222,7 +222,6 @@ compaction:
 
 - Node.js 20+
 - Claude Code CLI (authenticated)
-- Obsidian (recommended, not required)
 
 ## Documentation
 

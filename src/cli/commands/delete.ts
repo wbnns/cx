@@ -5,7 +5,7 @@ import { unlink, rm } from 'node:fs/promises';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
 import { deleteAgent, getAgent } from '../../core/agent.js';
-import { getMemoryDir } from '../../core/vault.js';
+import { getMemoryDir } from '../../core/paths.js';
 
 export const deleteCommand = new Command('delete')
   .description('Delete an agent')
@@ -15,7 +15,7 @@ export const deleteCommand = new Command('delete')
     const config = await loadConfig();
 
     try {
-      await getAgent(config.vault_path, name);
+      await getAgent(config.cx_path, name);
     } catch {
       console.error(chalk.red(`Agent not found: ${name}`));
       process.exit(1);
@@ -38,9 +38,9 @@ export const deleteCommand = new Command('delete')
 
       if (choice === 'a') {
         // Delete agent file (moves to trash) + remove memory dir
-        await deleteAgent(config.vault_path, name);
+        await deleteAgent(config.cx_path, name);
         try {
-          await rm(getMemoryDir(config.vault_path, name), { recursive: true, force: true });
+          await rm(getMemoryDir(config.cx_path, name), { recursive: true, force: true });
         } catch {
           // Memory dir may not exist
         }
@@ -49,12 +49,12 @@ export const deleteCommand = new Command('delete')
       }
 
       // choice === 'd' or anything else — just move agent to trash
-      await deleteAgent(config.vault_path, name);
+      await deleteAgent(config.cx_path, name);
       console.log(chalk.green(`Deleted agent: ${name} (moved to .trash/)`));
       return;
     }
 
     // Force mode — just move to trash
-    await deleteAgent(config.vault_path, name);
+    await deleteAgent(config.cx_path, name);
     console.log(chalk.green(`Deleted agent: ${name}`));
   });

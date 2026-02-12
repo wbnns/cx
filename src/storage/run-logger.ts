@@ -1,18 +1,18 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import matter from 'gray-matter';
-import { getRunsDir } from '../core/vault.js';
+import { getRunsDir } from '../core/paths.js';
 import type { RunResult, AgentFrontmatter } from '../types/index.js';
 
 export async function writeRunLog(
-  vaultPath: string,
+  cxPath: string,
   agent: AgentFrontmatter,
   result: RunResult,
 ): Promise<string> {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = now.toISOString().slice(11, 19).replace(/:/g, '');
-  const dir = join(getRunsDir(vaultPath), dateStr);
+  const dir = join(getRunsDir(cxPath), dateStr);
   await mkdir(dir, { recursive: true });
 
   const filename = `${agent.name}-${timeStr}.md`;

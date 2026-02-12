@@ -13,7 +13,7 @@ export const memoryCommand = new Command('memory')
     const config = await loadConfig();
 
     if (opts.archive) {
-      const archives = await listArchives(config.vault_path, name);
+      const archives = await listArchives(config.cx_path, name);
       if (archives.files.length === 0) {
         console.log(chalk.dim('No archives found.'));
         return;
@@ -23,7 +23,7 @@ export const memoryCommand = new Command('memory')
         console.log(`  ${a.period}  ${chalk.dim(a.path)}`);
       }
     } else {
-      const mem = await readHotMemory(config.vault_path, name);
+      const mem = await readHotMemory(config.cx_path, name);
       if (mem.entries.length === 0 && !mem.persistent_notes) {
         console.log(chalk.dim(`No memory for agent: ${name}`));
         return;

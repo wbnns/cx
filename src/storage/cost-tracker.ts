@@ -1,12 +1,12 @@
 import { readFile, writeFile, appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getCxRoot } from '../core/vault.js';
+import { getCxRoot } from '../core/paths.js';
 import { updateAgentFrontmatter } from '../core/agent-parser.js';
-import { getAgentFile } from '../core/vault.js';
+import { getAgentFile } from '../core/paths.js';
 import type { CostRecord, RunResult, AgentFrontmatter } from '../types/index.js';
 
 export async function recordCost(
-  vaultPath: string,
+  cxPath: string,
   agent: AgentFrontmatter,
   result: RunResult,
 ): Promise<void> {
@@ -22,10 +22,10 @@ export async function recordCost(
   };
 
   // Append to costs.md ledger
-  await appendToCostsLedger(vaultPath, record);
+  await appendToCostsLedger(cxPath, record);
 
   // Update agent frontmatter stats
-  const agentPath = getAgentFile(vaultPath, agent.name);
+  const agentPath = getAgentFile(cxPath, agent.name);
   await updateAgentFrontmatter(agentPath, {
     total_runs: (agent.total_runs ?? 0) + 1,
     total_cost_usd: (agent.total_cost_usd ?? 0) + result.total_cost_usd,
@@ -34,8 +34,8 @@ export async function recordCost(
   });
 }
 
-async function appendToCostsLedger(vaultPath: string, record: CostRecord): Promise<void> {
-  const costsPath = join(getCxRoot(vaultPath), 'costs.md');
+async function appendToCostsLedger(cxPath: string, record: CostRecord): Promise<void> {
+  const costsPath = join(getCxRoot(cxPath), 'costs.md');
   const categoryStr = record.categories?.join(',') ?? '-';
   const line = `| ${record.date.slice(0, 19)} | ${record.agent} | ${record.mode} | ${categoryStr} | $${record.cost_usd.toFixed(4)} | ${record.input_tokens} | ${record.output_tokens} | ${(record.duration_ms / 1000).toFixed(1)}s |\n`;
 
@@ -48,8 +48,8 @@ async function appendToCostsLedger(vaultPath: string, record: CostRecord): Promi
   }
 }
 
-export async function readCostsLedger(vaultPath: string): Promise<CostRecord[]> {
-  const costsPath = join(getCxRoot(vaultPath), 'costs.md');
+export async function readCostsLedger(cxPath: string): Promise<CostRecord[]> {
+  const costsPath = join(getCxRoot(cxPath), 'costs.md');
   let raw: string;
   try {
     raw = await readFile(costsPath, 'utf-8');

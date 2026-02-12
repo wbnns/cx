@@ -7,7 +7,7 @@ import YAML from 'yaml';
 describe('config YAML', () => {
   it('round-trips config through YAML', () => {
     const config = {
-      vault_path: '/tmp/test-vault',
+      cx_path: '/tmp/test-cx',
       claude_path: 'claude',
       default_model: 'sonnet',
       default_permission_mode: 'dangerouslySkipPermissions',
@@ -31,7 +31,7 @@ describe('config YAML', () => {
     const yamlStr = YAML.stringify(config, { indent: 2 });
     const parsed = YAML.parse(yamlStr);
 
-    expect(parsed.vault_path).toBe('/tmp/test-vault');
+    expect(parsed.cx_path).toBe('/tmp/test-cx');
     expect(parsed.daemon.tick_interval_seconds).toBe(30);
     expect(parsed.cost_limits.alert_thresholds).toEqual([5, 10, 25]);
     expect(parsed.compaction.default_model).toBe('haiku');
@@ -42,7 +42,7 @@ describe('config YAML', () => {
     const configPath = join(tmpDir, 'config.yaml');
 
     const config = {
-      vault_path: tmpDir,
+      cx_path: tmpDir,
       claude_path: 'claude',
       default_model: 'sonnet',
       default_permission_mode: 'dangerouslySkipPermissions',
@@ -53,14 +53,14 @@ describe('config YAML', () => {
     const raw = await readFile(configPath, 'utf-8');
     const parsed = YAML.parse(raw);
 
-    expect(parsed.vault_path).toBe(tmpDir);
+    expect(parsed.cx_path).toBe(tmpDir);
     expect(parsed.default_model).toBe('sonnet');
     expect(parsed.timezone).toBe('UTC');
   });
 
   it('migrates JSON config to YAML format', () => {
     const jsonConfig = {
-      vault_path: '/tmp/vault',
+      cx_path: '/tmp/cx',
       claude_path: 'claude',
       default_model: 'sonnet',
       default_permission_mode: 'dangerouslySkipPermissions',

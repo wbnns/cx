@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
 import { createAgent } from '../../core/agent.js';
-import { getAgentFile } from '../../core/vault.js';
+import { getAgentFile } from '../../core/paths.js';
 import type { AgentMode, AgentFrontmatter } from '../../types/index.js';
 
 const TEMPLATES: Record<string, string> = {
@@ -76,8 +76,8 @@ export const createCommand = new Command('create')
     }
 
     const body = TEMPLATES[mode] ?? TEMPLATES.scheduled!;
-    const agent = await createAgent(config.vault_path, name, mode, body, overrides);
-    const filePath = getAgentFile(config.vault_path, name);
+    const agent = await createAgent(config.cx_path, name, mode, body, overrides);
+    const filePath = getAgentFile(config.cx_path, name);
 
     console.log(chalk.green(`Created ${mode} agent: ${name}`));
     console.log(chalk.dim(`   File: ${filePath}`));

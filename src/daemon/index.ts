@@ -71,16 +71,16 @@ async function main(): Promise<void> {
       case 'compact': {
         const name = params?.name as string;
         if (params?.all) {
-          const agents = await listAgents(config.vault_path);
+          const agents = await listAgents(config.cx_path);
           for (const agent of agents) {
-            if (await shouldCompact(config.vault_path, agent.frontmatter.name)) {
-              await compactMemory(config.vault_path, agent.frontmatter.name, config.claude_path);
+            if (await shouldCompact(config.cx_path, agent.frontmatter.name)) {
+              await compactMemory(config.cx_path, agent.frontmatter.name, config.claude_path);
             }
           }
           return { message: 'Compaction complete for all agents' };
         }
         if (!name) throw new Error('Agent name required');
-        await compactMemory(config.vault_path, name, config.claude_path);
+        await compactMemory(config.cx_path, name, config.claude_path);
         return { message: `Compaction complete for ${name}` };
       }
 
@@ -93,7 +93,7 @@ async function main(): Promise<void> {
   startHeartbeat(state, tickIntervalMs);
 
   // Start file watcher
-  startFileWatcher(config.vault_path, (event, name, agent) => {
+  startFileWatcher(config.cx_path, (event, name, agent) => {
     log(`Agent file ${event}: ${name}`);
     if (event === 'unlink') {
       const currentState = getState();

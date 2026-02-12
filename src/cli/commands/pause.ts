@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
 import { updateAgentFrontmatter } from '../../core/agent-parser.js';
-import { getAgentFile } from '../../core/vault.js';
+import { getAgentFile } from '../../core/paths.js';
 import { sendIpcRequest } from '../ipc-client.js';
 
 export const pauseCommand = new Command('pause')
@@ -10,7 +10,7 @@ export const pauseCommand = new Command('pause')
   .argument('<name>', 'Agent name')
   .action(async (name: string) => {
     const config = await loadConfig();
-    const filePath = getAgentFile(config.vault_path, name);
+    const filePath = getAgentFile(config.cx_path, name);
 
     await updateAgentFrontmatter(filePath, { status: 'paused' });
 

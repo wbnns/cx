@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
-import { getWatchersDir } from '../../core/vault.js';
+import { getWatchersDir } from '../../core/paths.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -13,7 +13,7 @@ export const installDepsCommand = new Command('install-deps')
   .description('Install dependencies for watcher scripts')
   .action(async () => {
     const config = await loadConfig();
-    const watchersDir = getWatchersDir(config.vault_path);
+    const watchersDir = getWatchersDir(config.cx_path);
 
     let files: string[];
     try {

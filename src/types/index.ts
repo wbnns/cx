@@ -129,7 +129,7 @@ export interface IpcResponse {
 }
 
 export interface CxConfig {
-  vault_path: string;
+  cx_path: string;
   claude_path: string;
   default_model: string;
   default_permission_mode: string;

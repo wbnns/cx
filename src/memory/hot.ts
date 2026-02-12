@@ -3,15 +3,15 @@ import { dirname } from 'node:path';
 import { join } from 'node:path';
 import { parseMemoryFile, stringifyMemoryFile } from './parser.js';
 import { defaultTokenCounter } from './token-counter.js';
-import { getMemoryDir } from '../core/vault.js';
+import { getMemoryDir } from '../core/paths.js';
 import type { MemoryFile, MemoryEntry } from '../types/index.js';
 
-export function getCurrentMemoryPath(vaultPath: string, agentName: string): string {
-  return join(getMemoryDir(vaultPath, agentName), 'current.md');
+export function getCurrentMemoryPath(cxPath: string, agentName: string): string {
+  return join(getMemoryDir(cxPath, agentName), 'current.md');
 }
 
-export async function readHotMemory(vaultPath: string, agentName: string): Promise<MemoryFile> {
-  const path = getCurrentMemoryPath(vaultPath, agentName);
+export async function readHotMemory(cxPath: string, agentName: string): Promise<MemoryFile> {
+  const path = getCurrentMemoryPath(cxPath, agentName);
   try {
     const raw = await readFile(path, 'utf-8');
     return parseMemoryFile(raw);
@@ -25,8 +25,8 @@ export async function readHotMemory(vaultPath: string, agentName: string): Promi
   }
 }
 
-export async function writeHotMemory(vaultPath: string, agentName: string, mem: MemoryFile): Promise<void> {
-  const path = getCurrentMemoryPath(vaultPath, agentName);
+export async function writeHotMemory(cxPath: string, agentName: string, mem: MemoryFile): Promise<void> {
+  const path = getCurrentMemoryPath(cxPath, agentName);
   await mkdir(dirname(path), { recursive: true });
   const content = stringifyMemoryFile(mem);
   mem.token_count = defaultTokenCounter.count(content);
@@ -35,14 +35,14 @@ export async function writeHotMemory(vaultPath: string, agentName: string, mem: 
 }
 
 export async function appendMemoryEntry(
-  vaultPath: string,
+  cxPath: string,
   agentName: string,
   entry: MemoryEntry,
 ): Promise<MemoryFile> {
-  const mem = await readHotMemory(vaultPath, agentName);
+  const mem = await readHotMemory(cxPath, agentName);
   mem.entries.push(entry);
   const content = stringifyMemoryFile(mem);
   mem.token_count = defaultTokenCounter.count(content);
-  await writeHotMemory(vaultPath, agentName, mem);
+  await writeHotMemory(cxPath, agentName, mem);
   return mem;
 }

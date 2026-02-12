@@ -10,7 +10,7 @@ const CONFIG_FILE = join(CONFIG_DIR, 'config.yaml');
 const LEGACY_CONFIG_FILE = join(CONFIG_DIR, 'config.json');
 
 export const configSchema = z.object({
-  vault_path: z.string(),
+  cx_path: z.string(),
   claude_path: z.string().default('claude'),
   default_model: z.string().default('sonnet'),
   default_permission_mode: z.string().default('dangerouslySkipPermissions'),

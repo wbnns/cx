@@ -2,13 +2,13 @@ import { Command } from 'commander';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { saveConfig, configExists, getConfigDir, getSecretsDir } from '../../core/config.js';
-import { ensureVaultDirs } from '../../core/vault.js';
+import { ensureCxDirs } from '../../core/paths.js';
 import { mkdir, chmod } from 'node:fs/promises';
 import chalk from 'chalk';
 import type { CxConfig } from '../../types/index.js';
 
 export const initCommand = new Command('init')
-  .description('Initialize cx configuration (run from inside your vault directory)')
+  .description('Initialize cx configuration (run from inside your cx directory)')
   .action(async () => {
     const rl = createInterface({ input: stdin, output: stdout });
 
@@ -24,16 +24,16 @@ export const initCommand = new Command('init')
 
       console.log(chalk.bold('\ncx Setup\n'));
 
-      // Use current working directory as vault path
-      const vaultPath = process.cwd();
-      console.log(`Vault path: ${chalk.cyan(vaultPath)}`);
+      // Use current working directory as cx path
+      const cxPath = process.cwd();
+      console.log(`cx path: ${chalk.cyan(cxPath)}`);
 
       const claudePath = await rl.question('Claude CLI path (default: claude): ') || 'claude';
       const defaultModel = await rl.question('Default model (default: sonnet): ') || 'sonnet';
       const timezone = await rl.question('Timezone (default: America/Los_Angeles): ') || 'America/Los_Angeles';
 
       const config: CxConfig = {
-        vault_path: vaultPath,
+        cx_path: cxPath,
         claude_path: claudePath,
         default_model: defaultModel,
         default_permission_mode: 'dangerouslySkipPermissions',
@@ -55,7 +55,7 @@ export const initCommand = new Command('init')
       };
 
       await saveConfig(config);
-      await ensureVaultDirs(config.vault_path);
+      await ensureCxDirs(config.cx_path);
 
       // Create secrets directory
       const secretsDir = getSecretsDir();
@@ -63,7 +63,7 @@ export const initCommand = new Command('init')
       await chmod(secretsDir, 0o700);
 
       console.log(chalk.green('\nConfiguration saved to ' + getConfigDir() + '/config.yaml'));
-      console.log(chalk.green('Vault directories created at ' + config.vault_path + '/cx/'));
+      console.log(chalk.green('cx directories created at ' + config.cx_path + '/cx/'));
       console.log(chalk.dim('\nNext: cx create <name> --mode scheduled'));
     } finally {
       rl.close();

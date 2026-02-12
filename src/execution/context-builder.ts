@@ -4,7 +4,7 @@ import type { AgentFile } from '../types/index.js';
 
 export interface ContextBuildOptions {
   agent: AgentFile;
-  vaultPath: string;
+  cxPath: string;
   watcherContext?: string;
   includeArchives?: boolean;
   maxArchives?: number;
@@ -19,7 +19,7 @@ export async function buildContext(opts: ContextBuildOptions): Promise<string> {
   }
 
   // 2. Hot memory
-  const hotMemory = await readHotMemory(opts.vaultPath, opts.agent.frontmatter.name);
+  const hotMemory = await readHotMemory(opts.cxPath, opts.agent.frontmatter.name);
   if (hotMemory.persistent_notes) {
     parts.push(`## Persistent Notes\n\n${hotMemory.persistent_notes}`);
   }
@@ -33,12 +33,12 @@ export async function buildContext(opts: ContextBuildOptions): Promise<string> {
 
   // 3. Archive summaries (if requested)
   if (opts.includeArchives) {
-    const archives = await listArchives(opts.vaultPath, opts.agent.frontmatter.name);
+    const archives = await listArchives(opts.cxPath, opts.agent.frontmatter.name);
     const maxArchives = opts.maxArchives ?? 3;
     const recent = archives.files.slice(-maxArchives);
     for (const archive of recent) {
       try {
-        const content = await readArchive(opts.vaultPath, opts.agent.frontmatter.name, archive.period);
+        const content = await readArchive(opts.cxPath, opts.agent.frontmatter.name, archive.period);
         parts.push(`## Archive: ${archive.period}\n\n${content}`);
       } catch {
         // Skip unreadable archives

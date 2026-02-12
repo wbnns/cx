@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { watch } from 'node:fs';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
-import { getRunsDir } from '../../core/vault.js';
+import { getRunsDir } from '../../core/paths.js';
 
 export const logsCommand = new Command('logs')
   .description('View agent run logs')
@@ -14,7 +14,7 @@ export const logsCommand = new Command('logs')
   .option('--follow', 'Watch for new logs')
   .action(async (name: string, opts) => {
     const config = await loadConfig();
-    const runsDir = getRunsDir(config.vault_path);
+    const runsDir = getRunsDir(config.cx_path);
     const lastN = parseInt(opts.last, 10);
 
     const logFiles = await collectLogFiles(runsDir, name);

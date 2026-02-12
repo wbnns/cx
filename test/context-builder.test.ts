@@ -22,7 +22,7 @@ describe('context-builder', () => {
       body: '# Do the thing\n\nInstructions here.',
     };
 
-    const context = await buildContext({ agent, vaultPath: tmpDir });
+    const context = await buildContext({ agent, cxPath: tmpDir });
     expect(context).toContain('# Do the thing');
     expect(context).toContain('Instructions here.');
   });
@@ -45,7 +45,7 @@ describe('context-builder', () => {
 
     const context = await buildContext({
       agent,
-      vaultPath: tmpDir,
+      cxPath: tmpDir,
       watcherContext: '{"file_changed": true}',
     });
     expect(context).toContain('Watcher instructions.');

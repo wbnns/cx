@@ -45,7 +45,7 @@ export async function executeScheduledRun(
 
   const prompt = await buildContext({
     agent,
-    vaultPath: config.vault_path,
+    cxPath: config.cx_path,
     includeArchives: true,
   });
 
@@ -62,19 +62,19 @@ export async function executeScheduledRun(
   });
 
   // Post-run tasks
-  await writeRunLog(config.vault_path, agent.frontmatter, result);
-  await recordCost(config.vault_path, agent.frontmatter, result);
+  await writeRunLog(config.cx_path, agent.frontmatter, result);
+  await recordCost(config.cx_path, agent.frontmatter, result);
 
-  await appendMemoryEntry(config.vault_path, agent.frontmatter.name, {
+  await appendMemoryEntry(config.cx_path, agent.frontmatter.name, {
     timestamp: new Date().toISOString(),
     type: 'run_result',
     content: `**Status**: ${result.is_error ? 'ERROR' : 'SUCCESS'}\n**Cost**: $${result.total_cost_usd.toFixed(4)}\n\n${result.result.slice(0, 2000)}`,
   });
 
   // Check compaction
-  if (await shouldCompact(config.vault_path, agent.frontmatter.name)) {
+  if (await shouldCompact(config.cx_path, agent.frontmatter.name)) {
     try {
-      await compactMemory(config.vault_path, agent.frontmatter.name, config.claude_path);
+      await compactMemory(config.cx_path, agent.frontmatter.name, config.claude_path);
     } catch {
       // Non-fatal
     }

@@ -8,7 +8,7 @@ export const statusCommand = new Command('status')
   .description('Quick status overview')
   .action(async () => {
     const config = await loadConfig();
-    const agents = await listAgents(config.vault_path);
+    const agents = await listAgents(config.cx_path);
 
     if (agents.length === 0) {
       console.log(chalk.dim('No agents configured.'));

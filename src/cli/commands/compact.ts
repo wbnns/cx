@@ -14,8 +14,8 @@ export const compactCommand = new Command('compact')
   .action(async (name: string, opts) => {
     if (opts.dryRun) {
       const config = await loadConfig();
-      const agent = await getAgent(config.vault_path, name);
-      const mem = await readHotMemory(config.vault_path, name);
+      const agent = await getAgent(config.cx_path, name);
+      const mem = await readHotMemory(config.cx_path, name);
       const threshold = getMaxCurrentTokens(agent.frontmatter);
       console.log(`Agent: ${name}`);
       console.log(`Current tokens: ${mem.token_count}`);

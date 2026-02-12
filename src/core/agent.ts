@@ -1,11 +1,11 @@
 import { readdir, rename, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseAgentFile, writeAgentFile } from './agent-parser.js';
-import { getAgentsDir, getAgentFile, getMemoryDir, getTrashDir, ensureVaultDirs } from './vault.js';
+import { getAgentsDir, getAgentFile, getMemoryDir, getTrashDir, ensureCxDirs } from './paths.js';
 import type { AgentFile, AgentFrontmatter, AgentMode } from '../types/index.js';
 
-export async function listAgents(vaultPath: string): Promise<AgentFile[]> {
-  const dir = getAgentsDir(vaultPath);
+export async function listAgents(cxPath: string): Promise<AgentFile[]> {
+  const dir = getAgentsDir(cxPath);
   let files: string[];
   try {
     files = await readdir(dir);
@@ -25,20 +25,20 @@ export async function listAgents(vaultPath: string): Promise<AgentFile[]> {
   return agents;
 }
 
-export async function getAgent(vaultPath: string, name: string): Promise<AgentFile> {
-  const filePath = getAgentFile(vaultPath, name);
+export async function getAgent(cxPath: string, name: string): Promise<AgentFile> {
+  const filePath = getAgentFile(cxPath, name);
   return parseAgentFile(filePath);
 }
 
 export async function createAgent(
-  vaultPath: string,
+  cxPath: string,
   name: string,
   mode: AgentMode,
   body: string,
   overrides?: Partial<AgentFrontmatter>,
 ): Promise<AgentFile> {
-  await ensureVaultDirs(vaultPath);
-  await mkdir(getMemoryDir(vaultPath, name), { recursive: true });
+  await ensureCxDirs(cxPath);
+  await mkdir(getMemoryDir(cxPath, name), { recursive: true });
 
   const frontmatter: AgentFrontmatter = {
     name,
@@ -53,7 +53,7 @@ export async function createAgent(
   };
 
   const agent: AgentFile = { frontmatter, body };
-  const filePath = getAgentFile(vaultPath, name);
+  const filePath = getAgentFile(cxPath, name);
   await writeAgentFile(filePath, agent);
   return agent;
 }
@@ -106,9 +106,9 @@ function stripExecutionOverrides(
   return rest;
 }
 
-export async function deleteAgent(vaultPath: string, name: string): Promise<void> {
-  const filePath = getAgentFile(vaultPath, name);
-  const trashDir = getTrashDir(vaultPath);
+export async function deleteAgent(cxPath: string, name: string): Promise<void> {
+  const filePath = getAgentFile(cxPath, name);
+  const trashDir = getTrashDir(cxPath);
   await mkdir(trashDir, { recursive: true });
   const trashPath = join(trashDir, `${name}-${Date.now()}.md`);
   await rename(filePath, trashPath);

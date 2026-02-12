@@ -10,7 +10,7 @@ export const costsCommand = new Command('costs')
   .option('--by <field>', 'Group by: agent, mode, category', 'agent')
   .action(async (opts) => {
     const config = await loadConfig();
-    let records = await readCostsLedger(config.vault_path);
+    let records = await readCostsLedger(config.cx_path);
 
     if (opts.period) {
       records = records.filter(r => r.date.startsWith(opts.period));

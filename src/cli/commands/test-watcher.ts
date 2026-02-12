@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
 import { getAgent } from '../../core/agent.js';
-import { getWatchersDir } from '../../core/vault.js';
+import { getWatchersDir } from '../../core/paths.js';
 import { getWatchScript, getTriggerCondition } from '../../core/frontmatter-accessors.js';
 import { evaluateTriggerCondition } from '../../daemon/modes/watcher.js';
 
@@ -14,7 +14,7 @@ export const testWatcherCommand = new Command('test-watcher')
   .argument('<name>', 'Agent name')
   .action(async (name: string) => {
     const config = await loadConfig();
-    const agent = await getAgent(config.vault_path, name);
+    const agent = await getAgent(config.cx_path, name);
     const fm = agent.frontmatter;
 
     if (fm.execution.mode !== 'watcher') {
@@ -28,7 +28,7 @@ export const testWatcherCommand = new Command('test-watcher')
       process.exit(1);
     }
 
-    const scriptPath = join(getWatchersDir(config.vault_path), scriptName);
+    const scriptPath = join(getWatchersDir(config.cx_path), scriptName);
     console.log(chalk.bold(`Testing watcher: ${name}`));
     console.log(chalk.dim(`Script: ${scriptPath}\n`));
 

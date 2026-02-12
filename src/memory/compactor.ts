@@ -10,11 +10,11 @@ import type { MemoryFile } from '../types/index.js';
 
 const DEFAULT_COMPACTION_THRESHOLD = 4000; // tokens
 
-export async function shouldCompact(vaultPath: string, agentName: string): Promise<boolean> {
-  const mem = await readHotMemory(vaultPath, agentName);
+export async function shouldCompact(cxPath: string, agentName: string): Promise<boolean> {
+  const mem = await readHotMemory(cxPath, agentName);
   let threshold = DEFAULT_COMPACTION_THRESHOLD;
   try {
-    const agent = await getAgent(vaultPath, agentName);
+    const agent = await getAgent(cxPath, agentName);
     threshold = getMaxCurrentTokens(agent.frontmatter);
   } catch {
     // Use default threshold if agent can't be loaded
@@ -23,11 +23,11 @@ export async function shouldCompact(vaultPath: string, agentName: string): Promi
 }
 
 export async function compactMemory(
-  vaultPath: string,
+  cxPath: string,
   agentName: string,
   claudePath: string,
 ): Promise<void> {
-  const mem = await readHotMemory(vaultPath, agentName);
+  const mem = await readHotMemory(cxPath, agentName);
   if (mem.entries.length < 2) return;
 
   // Determine compaction model from config
@@ -60,7 +60,7 @@ export async function compactMemory(
   // Write archive
   const period = new Date().toISOString().slice(0, 7); // YYYY-MM
   const archiveContent = `# Archive: ${period}\n\nCompacted: ${new Date().toISOString()}\n\n## Summary\n\n${result.result}\n\n## Original Entries\n\n${entriesText}`;
-  await writeArchive(vaultPath, agentName, `${period}-${Date.now()}`, archiveContent);
+  await writeArchive(cxPath, agentName, `${period}-${Date.now()}`, archiveContent);
 
   // Rewrite current.md with summary + kept entries
   const newMem: MemoryFile = {
@@ -78,5 +78,5 @@ export async function compactMemory(
     ],
   };
   newMem.token_count = defaultTokenCounter.count(stringifyMemoryFile(newMem));
-  await writeHotMemory(vaultPath, agentName, newMem);
+  await writeHotMemory(cxPath, agentName, newMem);
 }
