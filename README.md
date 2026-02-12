@@ -17,7 +17,7 @@ Every agent is a markdown file with YAML frontmatter. Instructions go in the bod
 ```bash
 # Install from source
 git clone <repo-url> && cd cx
-npm install && npm run build && npm install -g .
+npm install && npm run build && sudo npm link
 
 # Initialize from your cx directory
 cd ~/my-project

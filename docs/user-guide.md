@@ -30,7 +30,7 @@
 ```bash
 # Install from source
 git clone <repo-url> && cd cx
-npm install && npm run build && npm install -g .
+npm install && npm run build && sudo npm link
 
 # Verify installation
 cx --version
