@@ -28,11 +28,12 @@
 ### 1.2 Install cx
 
 ```bash
-npm install -g cx-agent
+# Install from source
+git clone <repo-url> && cd cx
+npm install && npm run build && npm install -g .
 
 # Verify installation
 cx --version
-# cx 1.0.0
 ```
 
 ### 1.3 Initialize Your Directory
