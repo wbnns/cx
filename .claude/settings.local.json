@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(bun:*)",
+      "Bash(claude:*)",
+      "Bash(/Users/wbnns/.local/bin/claude:*)",
+      "WebSearch",
+      "Bash(git -C /Users/wbnns/git/claude-code-extender log --oneline -10)",
+      "Bash(node -e:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsup:*)",
+      "Bash(node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(textutil -convert txt -stdout:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)"
+    ]
+  }
+}
