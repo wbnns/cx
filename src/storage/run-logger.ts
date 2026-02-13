@@ -18,19 +18,19 @@ export async function writeRunLog(
   const filename = `${agent.name}-${timeStr}.md`;
   const filePath = join(dir, filename);
 
-  const frontmatter = {
+  const frontmatter: Record<string, unknown> = {
     agent: agent.name,
     mode: agent.execution.mode,
-    categories: agent.categories,
-    model: agent.model,
-    session_id: result.session_id,
+    timestamp: now.toISOString(),
     cost_usd: result.total_cost_usd,
     duration_ms: result.duration_ms,
     is_error: result.is_error,
-    input_tokens: result.usage?.input_tokens,
-    output_tokens: result.usage?.output_tokens,
-    timestamp: now.toISOString(),
   };
+  if (agent.categories) frontmatter.categories = agent.categories;
+  if (agent.model) frontmatter.model = agent.model;
+  if (result.session_id) frontmatter.session_id = result.session_id;
+  if (result.usage?.input_tokens != null) frontmatter.input_tokens = result.usage.input_tokens;
+  if (result.usage?.output_tokens != null) frontmatter.output_tokens = result.usage.output_tokens;
 
   const body = `\n# Run: ${agent.name}\n\n**Time**: ${now.toISOString()}\n**Duration**: ${(result.duration_ms / 1000).toFixed(1)}s\n**Cost**: $${result.total_cost_usd.toFixed(4)}\n**Status**: ${result.is_error ? 'ERROR' : 'SUCCESS'}\n\n## Result\n\n${result.result}\n`;
 

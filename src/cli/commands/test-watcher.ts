@@ -1,13 +1,14 @@
 import { Command } from 'commander';
 import { fork } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import { loadConfig } from '../../core/config.js';
 import { getAgent } from '../../core/agent.js';
 import { getWatchersDir } from '../../core/paths.js';
 import { getWatchScript, getTriggerCondition } from '../../core/frontmatter-accessors.js';
 import { evaluateTriggerCondition } from '../../daemon/modes/watcher.js';
+import { loadSecrets } from '../../secrets/loader.js';
 
 export const testWatcherCommand = new Command('test-watcher')
   .description('Test a watcher agent\'s check script')
@@ -33,12 +34,15 @@ export const testWatcherCommand = new Command('test-watcher')
     console.log(chalk.dim(`Script: ${scriptPath}\n`));
 
     // Run the watcher script
-    const harnessPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'daemon', 'watcher-harness.js');
+    const distRoot = dirname(dirname(realpathSync(process.argv[1])));
+    const harnessPath = join(distRoot, 'daemon', 'watcher-harness.js');
+    const secrets = await loadSecrets(fm.env_ref);
 
     const result = await new Promise<{ triggered: boolean; context?: Record<string, unknown>; error?: string }>((resolve) => {
       const child = fork(harnessPath, [scriptPath], {
         timeout: 30000,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        env: { ...process.env, ...secrets },
       });
 
       let stdout = '';

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const agentModeSchema = z.enum(['scheduled', 'watcher', 'persistent']);
 export const agentStatusSchema = z.enum(['active', 'paused', 'stopped', 'failed']);
-export const notificationEventSchema = z.enum(['completion', 'failure', 'trigger', 'budget_warning']);
+export const notificationEventSchema = z.enum(['completion', 'failure', 'trigger']);
 export const notificationChannelSchema = z.enum(['telegram']);
 export const restartPolicySchema = z.enum(['always', 'on_failure', 'never']);
 export const scheduleTypeSchema = z.enum(['cron', 'once', 'manual']);
@@ -71,6 +71,9 @@ export const agentFrontmatterSchema = z.object({
 
   // Secrets
   env_ref: z.string().optional(),
+
+  // MCP
+  mcp_config: z.string().optional(),
 
   // Stats
   total_runs: z.number().int().min(0).optional(),

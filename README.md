@@ -41,28 +41,36 @@ Agents are markdown files in `cx/agents/` with YAML frontmatter:
 
 ```yaml
 ---
+name: gmail-watcher
 type: agent
 status: active
-categories: [personal]
 execution:
   mode: scheduled
   schedule:
-    expression: "30 6 * * *"
-    timezone: America/Los_Angeles
-tools: [web-search, web-fetch]
-resource_limits:
-  max_cost_usd: 0.15
+    expression: "0 6 * * *"
+    type: cron
+    timezone: Atlantic/Azores
+tools:
+  - mcp__gmail__list_unread
+  - mcp__gmail__read_email
+  - mcp__gmail__archive
+  - mcp__gmail__mark_read
+notifications:
+  - channel: telegram
+    events: [completion, failure]
 memory:
   enabled: true
-env_ref: global
+env_ref: email
+mcp_config: /home/deploy/nova/cx/tools/gmail-mcp-config.json
 ---
 
-# Surf Report Agent
+# Gmail Watcher
 
-Check surf conditions for local beaches.
-Include wave height, period, wind, and tides.
-Keep it under 200 words.
+Check for new unread emails.
+Summarize anything important and archive the rest.
 ```
+
+The `name` field provides a human-readable identifier. The `mcp_config` field points to a JSON file that tells Claude Code which MCP tool servers to start. Tools prefixed with `mcp__<server>__` correspond to tools exposed by those servers — see [MCP Tools](#mcp-tools) below.
 
 ## Three Agent Modes
 
@@ -117,6 +125,46 @@ execution:
     restart_policy: on_failure
     max_session_duration_hours: 24
 ```
+
+## MCP Tools
+
+Agents can use custom tools via [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) servers. An MCP server is a small program that exposes tools over stdio — Claude Code starts it automatically and calls its tools during a run.
+
+### Wiring an MCP server to an agent
+
+1. **Write the server** — a Node.js (or Python) script that implements `ListTools` and `CallTool` handlers using `@modelcontextprotocol/sdk`. Place it in `cx/tools/`.
+
+2. **Create a config JSON** pointing to the server:
+
+```json
+{
+  "mcpServers": {
+    "gmail": {
+      "command": "node",
+      "args": ["/home/deploy/nova/cx/tools/gmail-mcp-server.js"]
+    }
+  }
+}
+```
+
+3. **Reference it in the agent's frontmatter** with `mcp_config`:
+
+```yaml
+mcp_config: /home/deploy/nova/cx/tools/gmail-mcp-config.json
+```
+
+4. **List the tools** in the agent's `tools` array using the `mcp__<server>__<tool>` naming convention:
+
+```yaml
+tools:
+  - mcp__gmail__list_unread
+  - mcp__gmail__read_email
+  - mcp__gmail__archive
+```
+
+The server name (`gmail`) matches the key in the config JSON. The tool name (`list_unread`) matches what the server's `ListTools` handler returns.
+
+MCP servers and their configs live in `cx/tools/` by convention, with a shared `package.json` for dependencies.
 
 ## CLI Commands
 
@@ -191,6 +239,7 @@ resource_limits:
 my-project/
   cx/
     agents/           # Agent markdown files
+    tools/            # MCP servers, bots, and supporting scripts
     watchers/         # Watcher check scripts
     memory/           # Agent memory (current + archives)
     runs/             # Run logs organized by date
@@ -208,10 +257,15 @@ Global config lives at `~/.config/cx/config.yaml`:
 cx_path: ~/my-project
 claude_path: claude
 default_model: sonnet
+default_permission_mode: dangerouslySkipPermissions
 timezone: America/Los_Angeles
 daemon:
   tick_interval_seconds: 30
   log_file: ~/.config/cx/daemon.log
+notifications:
+  telegram:
+    bot_token: "YOUR_BOT_TOKEN"
+    default_chat_id: "YOUR_CHAT_ID"
 cost_limits:
   daily_usd: 25
   monthly_budget_usd: 100

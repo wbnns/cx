@@ -27,12 +27,6 @@ export const configSchema = z.object({
       default_chat_id: z.string(),
     }).optional(),
   }).optional(),
-  cost_limits: z.object({
-    warn_threshold_usd: z.number().optional(),
-    monthly_budget_usd: z.number().optional(),
-    daily_usd: z.number().optional(),
-    alert_thresholds: z.array(z.number()).optional(),
-  }).optional(),
   compaction: z.object({
     default_model: z.string().optional(),
   }).optional(),
@@ -75,11 +69,6 @@ export async function loadConfig(): Promise<CxConfig> {
     try {
       const jsonRaw = await readFile(LEGACY_CONFIG_FILE, 'utf-8');
       const jsonConfig = JSON.parse(jsonRaw);
-      // Migrate cost_tracking → cost_limits
-      if (jsonConfig.cost_tracking && !jsonConfig.cost_limits) {
-        jsonConfig.cost_limits = jsonConfig.cost_tracking;
-        delete jsonConfig.cost_tracking;
-      }
       const parsed = configSchema.parse(jsonConfig) as CxConfig;
       await saveConfig(parsed);
       return parsed;

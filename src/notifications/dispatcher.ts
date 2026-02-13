@@ -18,7 +18,7 @@ export async function dispatch(
 
   const promises = notifications.map(async (notification) => {
     // Check if this notification config cares about this event
-    const events = notification.events ?? ['completion', 'failure', 'trigger', 'budget_warning'];
+    const events = notification.events ?? ['completion', 'failure', 'trigger'];
     if (!events.includes(payload.event)) return;
 
     try {
@@ -56,7 +56,6 @@ function formatMessage(payload: NotificationPayload): string {
     completion: '✅',
     failure: '❌',
     trigger: '🔔',
-    budget_warning: '⚠️',
   }[payload.event];
 
   return `${emoji} *cx: ${payload.agent.name}*\n\n${payload.message}`;

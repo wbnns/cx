@@ -7,8 +7,8 @@ export interface ClaudeSpawnOptions {
   model?: string;
   systemPrompt?: string;
   tools?: string[];
-  maxBudget?: number;
   sessionId?: string; // for --resume
+  mcpConfigPath?: string;
   env?: Record<string, string>;
   timeoutMs?: number;
   verbose?: boolean;
@@ -26,11 +26,11 @@ export async function spawnClaude(opts: ClaudeSpawnOptions): Promise<RunResult> 
   if (opts.tools?.length) {
     args.push('--allowedTools', opts.tools.join(','));
   }
-  if (opts.maxBudget) {
-    args.push('--max-turns-unlimited', '--max-budget-usd', String(opts.maxBudget));
-  }
   if (opts.sessionId) {
     args.push('--resume', opts.sessionId);
+  }
+  if (opts.mcpConfigPath) {
+    args.push('--mcp-config', opts.mcpConfigPath);
   }
 
   args.push('--dangerously-skip-permissions');

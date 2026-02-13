@@ -52,10 +52,6 @@ export function getRestartDelaySeconds(fm: AgentFrontmatter): number {
   return fm.execution.persistent?.restart_delay_seconds ?? 30;
 }
 
-export function getMaxBudget(fm: AgentFrontmatter): number | undefined {
-  return fm.resource_limits?.max_cost_usd;
-}
-
 export function getTools(fm: AgentFrontmatter): string[] | undefined {
   return fm.tools;
 }

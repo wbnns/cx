@@ -3,12 +3,11 @@ import { spawnClaude } from '../../execution/claude-process.js';
 import { buildContext } from '../../execution/context-builder.js';
 import { appendMemoryEntry } from '../../memory/hot.js';
 import { writeRunLog } from '../../storage/run-logger.js';
-import { recordCost } from '../../storage/cost-tracker.js';
 import { shouldCompact, compactMemory } from '../../memory/compactor.js';
 import { dispatch } from '../../notifications/dispatcher.js';
 import { loadSecrets } from '../../secrets/loader.js';
 import { registerProcess, unregisterProcess, isRunning } from '../process-registry.js';
-import { getMaxBudget, getTools, getScheduleExpression, getScheduleTimezone } from '../../core/frontmatter-accessors.js';
+import { getTools, getScheduleExpression, getScheduleTimezone } from '../../core/frontmatter-accessors.js';
 import type { AgentFile, DaemonAgentState, CxConfig, RunResult } from '../../types/index.js';
 
 export function getNextRun(schedule: string, timezone?: string): Date | null {
@@ -56,14 +55,13 @@ export async function executeScheduledRun(
     prompt,
     model: agent.frontmatter.model ?? config.default_model,
     tools: getTools(agent.frontmatter),
-    maxBudget: getMaxBudget(agent.frontmatter),
+    mcpConfigPath: agent.frontmatter.mcp_config,
     env,
     timeoutMs: 600000, // 10 minute timeout
   });
 
   // Post-run tasks
   await writeRunLog(config.cx_path, agent.frontmatter, result);
-  await recordCost(config.cx_path, agent.frontmatter, result);
 
   await appendMemoryEntry(config.cx_path, agent.frontmatter.name, {
     timestamp: new Date().toISOString(),
@@ -86,7 +84,7 @@ export async function executeScheduledRun(
     agent: agent.frontmatter,
     message: result.is_error
       ? `Run failed: ${result.result.slice(0, 200)}`
-      : `Run completed in ${(result.duration_ms / 1000).toFixed(1)}s, cost $${result.total_cost_usd.toFixed(4)}`,
+      : `Run completed in ${(result.duration_ms / 1000).toFixed(1)}s ($${result.total_cost_usd.toFixed(4)})\n\n${result.result.slice(0, 3000)}`,
   });
 
   return result;

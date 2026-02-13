@@ -29,7 +29,6 @@ export const listCommand = new Command('list')
       schedule: a.frontmatter.execution.schedule?.expression ?? '-',
       last_run: a.frontmatter.last_run ? new Date(a.frontmatter.last_run).toLocaleString() : '-',
       runs: String(a.frontmatter.total_runs ?? 0),
-      cost: a.frontmatter.total_cost_usd ? `$${a.frontmatter.total_cost_usd.toFixed(2)}` : '$0.00',
     }));
 
     const table = formatTable([
@@ -39,7 +38,6 @@ export const listCommand = new Command('list')
       { header: 'Schedule', key: 'schedule', width: 15 },
       { header: 'Last Run', key: 'last_run', width: 20 },
       { header: 'Runs', key: 'runs', width: 6, align: 'right' },
-      { header: 'Cost', key: 'cost', width: 10, align: 'right' },
     ], rows);
 
     console.log(table);

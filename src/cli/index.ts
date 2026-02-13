@@ -12,7 +12,6 @@ import { resumeCommand } from './commands/resume.js';
 import { logsCommand } from './commands/logs.js';
 import { memoryCommand } from './commands/memory-cmd.js';
 import { compactCommand } from './commands/compact.js';
-import { costsCommand } from './commands/costs.js';
 import { daemonCommand } from './commands/daemon.js';
 import { secretsCommand } from './commands/secrets.js';
 import { installDepsCommand } from './commands/install-deps.js';
@@ -36,7 +35,6 @@ export function createProgram(): Command {
   program.addCommand(logsCommand);
   program.addCommand(memoryCommand);
   program.addCommand(compactCommand);
-  program.addCommand(costsCommand);
   program.addCommand(daemonCommand);
   program.addCommand(secretsCommand);
   program.addCommand(installDepsCommand);

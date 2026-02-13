@@ -1,7 +1,7 @@
 export type AgentMode = 'scheduled' | 'watcher' | 'persistent';
 export type AgentStatus = 'active' | 'paused' | 'stopped' | 'failed';
 export type NotificationChannel = 'telegram';
-export type NotificationEvent = 'completion' | 'failure' | 'trigger' | 'budget_warning';
+export type NotificationEvent = 'completion' | 'failure' | 'trigger';
 export type RestartPolicy = 'always' | 'on_failure' | 'never';
 export type ScheduleType = 'cron' | 'once' | 'manual';
 export type CompactionPolicy = 'summarize' | 'truncate';
@@ -70,6 +70,9 @@ export interface AgentFrontmatter {
   // Secrets
   env_ref?: string;
 
+  // MCP
+  mcp_config?: string;
+
   // Stats (auto-updated)
   total_runs?: number;
   total_cost_usd?: number;
@@ -114,6 +117,7 @@ export interface DaemonAgentState {
   next_run?: string;
   consecutive_failures?: number;
   cooldown_until?: string;
+  _lastResultHash?: string;
 }
 
 export interface IpcRequest {
@@ -146,12 +150,6 @@ export interface CxConfig {
       default_chat_id: string;
     };
   };
-  cost_limits?: {
-    warn_threshold_usd?: number;
-    monthly_budget_usd?: number;
-    daily_usd?: number;
-    alert_thresholds?: number[];
-  };
   compaction?: {
     default_model?: string;
   };
@@ -171,13 +169,3 @@ export interface MemoryFile {
   entries: MemoryEntry[];
 }
 
-export interface CostRecord {
-  date: string;
-  agent: string;
-  mode: AgentMode;
-  categories?: string[];
-  cost_usd: number;
-  input_tokens: number;
-  output_tokens: number;
-  duration_ms: number;
-}

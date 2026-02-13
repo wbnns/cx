@@ -1,16 +1,16 @@
+import { createHash } from 'node:crypto';
 import { fork } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Parser } from 'expr-eval';
 import { spawnClaude } from '../../execution/claude-process.js';
 import { buildContext } from '../../execution/context-builder.js';
 import { appendMemoryEntry } from '../../memory/hot.js';
 import { writeRunLog } from '../../storage/run-logger.js';
-import { recordCost } from '../../storage/cost-tracker.js';
 import { dispatch } from '../../notifications/dispatcher.js';
 import { loadSecrets } from '../../secrets/loader.js';
 import { getWatchersDir } from '../../core/paths.js';
-import { getWatchScript, getMaxBudget, getTools } from '../../core/frontmatter-accessors.js';
+import { getWatchScript, getTools } from '../../core/frontmatter-accessors.js';
 import type { AgentFile, DaemonAgentState, CxConfig } from '../../types/index.js';
 
 const MAX_CONSECUTIVE_FAILURES = 3;
@@ -30,7 +30,12 @@ export async function runWatcherCheck(
   if (!scriptName) throw new Error('No watcher script configured');
 
   const scriptPath = join(getWatchersDir(cxPath), scriptName);
-  const harnessPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'watcher-harness.js');
+  // Resolve from process.argv[1] (the daemon entry point at dist/daemon/index.js)
+  // so this works regardless of whether tsup chunks this code or inlines it.
+  const distRoot = dirname(dirname(realpathSync(process.argv[1])));
+  const harnessPath = join(distRoot, 'daemon', 'watcher-harness.js');
+
+  const secrets = await loadSecrets(agent.frontmatter.env_ref);
 
   return new Promise<WatcherResult>((resolve) => {
     const child = fork(harnessPath, [scriptPath], {
@@ -38,6 +43,7 @@ export async function runWatcherCheck(
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       env: {
         ...process.env,
+        ...secrets,
         CX_WATCHER_CONFIG: JSON.stringify({
           agent_name: agent.frontmatter.name,
           last_check: new Date().toISOString(),
@@ -109,13 +115,12 @@ export async function executeWatcherRun(
     prompt,
     model: agent.frontmatter.model ?? config.default_model,
     tools: getTools(agent.frontmatter),
-    maxBudget: getMaxBudget(agent.frontmatter),
+    mcpConfigPath: agent.frontmatter.mcp_config,
     env,
     timeoutMs: 600000,
   });
 
   await writeRunLog(config.cx_path, agent.frontmatter, result);
-  await recordCost(config.cx_path, agent.frontmatter, result);
 
   await appendMemoryEntry(config.cx_path, agent.frontmatter.name, {
     timestamp: new Date().toISOString(),
@@ -123,11 +128,20 @@ export async function executeWatcherRun(
     content: `**Triggered by watcher**\n**Status**: ${result.is_error ? 'ERROR' : 'SUCCESS'}\n**Cost**: $${result.total_cost_usd.toFixed(4)}\n\n${result.result.slice(0, 2000)}`,
   });
 
+  // Deduplicate notifications: skip dispatch if result is identical to previous run
+  const resultHash = createHash('sha256').update(result.result).digest('hex');
+  const isDuplicate = agentState._lastResultHash === resultHash;
+  agentState._lastResultHash = resultHash;
+
+  if (isDuplicate && !result.is_error) {
+    return; // Skip duplicate notification
+  }
+
   await dispatch(config, agent.frontmatter, {
     event: result.is_error ? 'failure' : 'completion',
     agent: agent.frontmatter,
     message: result.is_error
       ? `Watcher run failed: ${result.result.slice(0, 200)}`
-      : `Watcher run completed, cost $${result.total_cost_usd.toFixed(4)}`,
+      : `Watcher run completed ($${result.total_cost_usd.toFixed(4)})\n\n${result.result.slice(0, 3000)}`,
   });
 }

@@ -12,7 +12,10 @@
 4. [Writing Watcher Scripts](#4-writing-watcher-scripts)
 5. [Memory & Compaction](#5-memory--compaction)
 6. [Configuration Reference](#6-configuration-reference)
-7. [Troubleshooting](#7-troubleshooting)
+7. [Notifications](#7-notifications)
+8. [MCP Tool Servers](#8-mcp-tool-servers)
+9. [Telegram Bot](#9-telegram-bot)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
@@ -113,6 +116,85 @@ cx daemon logs --follow
 
 The daemon must be running for scheduled, watcher, and persistent agents to execute automatically. Manual triggers via `cx start` also require the daemon.
 
+### 1.6 Setting Up MCP Tools
+
+MCP (Model Context Protocol) servers give your agents custom tools — Gmail access, calendar lookups, database queries, or anything else you can code. Here's how to set one up:
+
+**Create the tools directory:**
+
+```bash
+mkdir -p cx/tools
+cd cx/tools
+npm init -y
+# Set module type for ESM imports
+npm pkg set type=module
+npm install @modelcontextprotocol/sdk
+```
+
+**Write an MCP server** (e.g., `cx/tools/my-mcp-server.js`):
+
+```javascript
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+
+const server = new Server(
+  { name: 'my-server', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: 'my_tool',
+      description: 'Does something useful',
+      inputSchema: {
+        type: 'object',
+        properties: { query: { type: 'string' } },
+        required: ['query'],
+      },
+    },
+  ],
+}));
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === 'my_tool') {
+    const result = await doSomething(request.params.arguments.query);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+  throw new Error(`Unknown tool: ${request.params.name}`);
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+**Create a config JSON** (e.g., `cx/tools/my-mcp-config.json`):
+
+```json
+{
+  "mcpServers": {
+    "myserver": {
+      "command": "node",
+      "args": ["/absolute/path/to/cx/tools/my-mcp-server.js"]
+    }
+  }
+}
+```
+
+**Wire it into your agent's frontmatter:**
+
+```yaml
+mcp_config: /absolute/path/to/cx/tools/my-mcp-config.json
+tools:
+  - mcp__myserver__my_tool
+```
+
+The tool naming convention is `mcp__<server>__<tool>` — where `<server>` matches the key in the config JSON and `<tool>` matches the name from `ListTools`.
+
 ---
 
 ## 2. Quickstart: Your First Agent
@@ -200,6 +282,52 @@ cx status
 cx logs surf-report
 cx costs
 ```
+
+### Real-World Example: Gmail Watcher
+
+Here's a production agent that uses MCP tools, notifications, and memory. It checks for new emails every morning, summarizes anything important, and archives the rest.
+
+```yaml
+---
+name: gmail-watcher
+type: agent
+status: active
+execution:
+  mode: scheduled
+  schedule:
+    expression: "0 6 * * *"
+    type: cron
+    timezone: Atlantic/Azores
+tools:
+  - mcp__gmail__list_unread
+  - mcp__gmail__list_inbox
+  - mcp__gmail__read_email
+  - mcp__gmail__archive
+  - mcp__gmail__mark_read
+  - mcp__gmail__flag
+  - mcp__gmail__trash
+notifications:
+  - channel: telegram
+    events: [completion, failure]
+memory:
+  enabled: true
+env_ref: email
+mcp_config: /home/deploy/nova/cx/tools/gmail-mcp-config.json
+---
+
+# Gmail Watcher
+
+You are an email assistant. Every morning:
+1. List unread emails
+2. Read each one and decide its importance
+3. Summarize anything that needs attention
+4. Archive newsletters and notifications
+5. Flag anything that needs a reply
+
+Report your findings via the run output (sent to Telegram).
+```
+
+This agent uses a Gmail MCP server (`cx/tools/gmail-mcp-server.js`) that connects to Gmail via IMAP and exposes tools for listing, reading, archiving, and flagging emails. The `env_ref: email` loads Gmail credentials from the `email` secret group. Notifications go to Telegram on completion or failure.
 
 ---
 
@@ -499,6 +627,37 @@ cx test-watcher email-watcher
 
 This runs the check script, displays the returned `triggered` and `context` values, evaluates the `trigger_condition` expression against the context, and tells you whether a Claude run would have been triggered.
 
+### 4.6 Pairing Watchers with MCP Tools
+
+A common pattern is to pair a lightweight watcher script with a full MCP server. The watcher does a cheap check to decide whether to trigger, while the MCP server provides rich tools for the Claude run itself.
+
+**Example: Gmail**
+
+The gmail-watcher agent uses two scripts:
+
+- **Watcher** (`cx/watchers/gmail-watcher.js`) — A cheap IMAP check that looks for new unseen email UIDs. No Claude API calls. Runs every few minutes via the daemon.
+- **MCP server** (`cx/tools/gmail-mcp-server.js`) — Full IMAP client exposing tools like `list_unread`, `read_email`, `archive`, and `mark_read`. Only starts when the watcher triggers a Claude run.
+
+The watcher script tracks seen UIDs in a local cache file so it only triggers when genuinely new emails arrive:
+
+```javascript
+// watchers/gmail-watcher.js (simplified)
+module.exports.check = async function check() {
+  const currentUids = await getUnseenUids();  // cheap IMAP SEARCH
+  const trackedUids = loadFromCache();
+  const newUids = currentUids.filter(uid => !trackedUids.has(uid));
+
+  if (newUids.length === 0) return { triggered: false };
+
+  saveToCache(currentUids);
+  return { triggered: true, context: { count: newUids.length } };
+};
+```
+
+When triggered, the agent starts the Gmail MCP server (via `mcp_config`) and has full access to read, archive, and flag emails using the `mcp__gmail__*` tools.
+
+This split keeps costs low — the watcher runs without Claude API calls, and the MCP server only spins up when there's actual work to do.
+
 ---
 
 ## 5. Memory & Compaction
@@ -556,12 +715,14 @@ All configuration lives in the agent's YAML frontmatter. Here is every field:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `name` | String | filename | Human-readable identifier for the agent |
 | `type` | String | `agent` | Always `"agent"` |
 | `status` | Enum | `active` | `active` \| `paused` \| `stopped` \| `failed` |
 | `categories` | String[] | `[]` | Tags for organization and cost grouping |
-| `tools` | String[] | `[]` | MCP tools/servers available to the agent |
+| `tools` | String[] | `[]` | Tools available to the agent (use `mcp__<server>__<tool>` for MCP tools) |
 | `model` | String | config default | Model override (e.g., `sonnet`, `opus`, `haiku`) |
 | `env_ref` | String | `global` | Secret group name to load |
+| `mcp_config` | String | — | Absolute path to MCP server config JSON file |
 
 ### 6.2 Execution Fields
 
@@ -609,9 +770,328 @@ notifications:
     events: [completion, failure, trigger, budget_warning]
 ```
 
+### 6.6 MCP Config File Format
+
+The `mcp_config` frontmatter field points to a JSON file that defines which MCP servers to start for a run:
+
+```json
+{
+  "mcpServers": {
+    "server_name": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-server.js"]
+    }
+  }
+}
+```
+
+Multiple servers can be defined in one config file. Each server key becomes the middle segment of the `mcp__<server>__<tool>` naming convention.
+
+### 6.7 Global Config (`~/.config/cx/config.yaml`)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `cx_path` | String | Path to the project containing the `cx/` directory |
+| `claude_path` | String | Path to the Claude Code CLI binary (default: `claude`) |
+| `default_model` | String | Default model for agent runs (e.g., `sonnet`, `opus`) |
+| `default_permission_mode` | String | Claude Code permission mode for agent runs (e.g., `dangerouslySkipPermissions` for autonomous agents) |
+| `cx_folder` | String | Name of the cx subdirectory (default: `cx`) |
+| `timezone` | String | Default IANA timezone |
+| `daemon.tick_interval_seconds` | Number | How often the daemon checks for work |
+| `daemon.log_file` | String | Path to daemon log file |
+| `notifications.telegram.bot_token` | String | Telegram bot API token |
+| `notifications.telegram.default_chat_id` | String | Default Telegram chat ID for notifications |
+| `cost_limits.daily_usd` | Number | Daily cost ceiling across all agents |
+| `cost_limits.monthly_budget_usd` | Number | Monthly cost budget |
+| `compaction.default_model` | String | Model used for memory compaction (default: `haiku`) |
+
 ---
 
-## 7. Troubleshooting
+## 7. Notifications
+
+cx sends notifications via Telegram when agent events occur. Configure notifications per-agent in frontmatter:
+
+```yaml
+notifications:
+  - channel: telegram
+    events: [completion, failure]
+```
+
+Available events: `completion`, `failure`, `trigger`, `budget_warning`.
+
+Global Telegram credentials are configured in `~/.config/cx/config.yaml`:
+
+```yaml
+notifications:
+  telegram:
+    bot_token: "YOUR_BOT_TOKEN"
+    default_chat_id: "YOUR_CHAT_ID"
+```
+
+---
+
+## 8. MCP Tool Servers
+
+MCP (Model Context Protocol) servers are Node.js (or Python) programs that expose custom tools to Claude Code agents. They communicate over stdio — Claude Code starts the server, calls tools during a run, and shuts it down when finished.
+
+### 8.1 Directory Convention
+
+```
+cx/tools/
+  gmail-mcp-server.js          # MCP server implementation
+  gmail-mcp-config.json         # Config JSON for the server
+  calendar-mcp-server.js
+  calendar-mcp-config.json
+  telegram-bot.js               # Other supporting scripts
+  transcribe.py
+  package.json                  # Shared dependencies
+```
+
+### 8.2 Dependencies
+
+The `cx/tools/package.json` manages shared dependencies for all MCP servers:
+
+```json
+{
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0",
+    "imap": "^0.8",
+    "mailparser": "^3.7",
+    "node-ical": "^0.25.1"
+  }
+}
+```
+
+Install with `npm install` from the `cx/tools/` directory.
+
+### 8.3 Anatomy of an MCP Server
+
+Every MCP server implements two handlers:
+
+1. **`ListTools`** — Returns an array of tool definitions (name, description, input schema)
+2. **`CallTool`** — Executes a tool by name and returns the result
+
+```javascript
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+
+const server = new Server(
+  { name: 'my-server', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+// Define available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: 'my_tool',
+      description: 'Does something useful',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          param: { type: 'string', description: 'Input parameter' },
+        },
+        required: ['param'],
+      },
+    },
+  ],
+}));
+
+// Handle tool calls
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  if (name === 'my_tool') {
+    const result = await doWork(args.param);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+  }
+  throw new Error(`Unknown tool: ${name}`);
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+### 8.4 Config JSON Format
+
+Each MCP server needs a config JSON that tells Claude Code how to start it:
+
+```json
+{
+  "mcpServers": {
+    "gmail": {
+      "command": "node",
+      "args": ["/home/deploy/nova/cx/tools/gmail-mcp-server.js"]
+    }
+  }
+}
+```
+
+The server key (`gmail`) becomes the middle segment in the tool naming convention: `mcp__gmail__list_unread`.
+
+### 8.5 Wiring into an Agent
+
+Add two fields to the agent's frontmatter:
+
+```yaml
+mcp_config: /home/deploy/nova/cx/tools/gmail-mcp-config.json
+tools:
+  - mcp__gmail__list_unread
+  - mcp__gmail__read_email
+  - mcp__gmail__archive
+  - mcp__gmail__mark_read
+```
+
+The agent can only call tools listed in its `tools` array — this acts as an allowlist even if the MCP server exposes more tools.
+
+### 8.6 Example: Gmail MCP Server
+
+A production Gmail MCP server that connects via IMAP and exposes email management tools:
+
+```javascript
+// cx/tools/gmail-mcp-server.js (abbreviated)
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import Imap from 'imap';
+import { simpleParser } from 'mailparser';
+
+const server = new Server(
+  { name: 'gmail', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    { name: 'list_unread', description: 'List unread emails', inputSchema: { type: 'object', properties: { limit: { type: 'number' } } } },
+    { name: 'read_email', description: 'Read a specific email by UID', inputSchema: { type: 'object', properties: { uid: { type: 'string' } }, required: ['uid'] } },
+    { name: 'archive', description: 'Archive an email by UID', inputSchema: { type: 'object', properties: { uid: { type: 'string' } }, required: ['uid'] } },
+    { name: 'mark_read', description: 'Mark an email as read', inputSchema: { type: 'object', properties: { uid: { type: 'string' } }, required: ['uid'] } },
+    // ... more tools
+  ],
+}));
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+  switch (name) {
+    case 'list_unread': return await listUnread(args.limit);
+    case 'read_email':  return await readEmail(args.uid);
+    case 'archive':     return await archiveEmail(args.uid);
+    case 'mark_read':   return await markRead(args.uid);
+    default: throw new Error(`Unknown tool: ${name}`);
+  }
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+Environment variables (`GMAIL_USER`, `GMAIL_APP_PASSWORD`) are injected via the agent's `env_ref: email` secret group.
+
+### 8.7 Example: Calendar MCP Server
+
+A simpler single-tool server that fetches today's calendar events from ICS URLs:
+
+```javascript
+// cx/tools/calendar-mcp-server.js (abbreviated)
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import ical from 'node-ical';
+
+const server = new Server(
+  { name: 'calendar', version: '1.0.0' },
+  { capabilities: { tools: {} } }
+);
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: 'list_today',
+      description: "List today's calendar events",
+      inputSchema: { type: 'object', properties: {} },
+    },
+  ],
+}));
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === 'list_today') {
+    const events = await fetchTodaysEvents();  // Fetches from GOOGLE_CALENDAR_ICS_URLS env var
+    return { content: [{ type: 'text', text: JSON.stringify(events) }] };
+  }
+  throw new Error(`Unknown tool: ${request.params.name}`);
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+Agent frontmatter:
+
+```yaml
+mcp_config: /home/deploy/nova/cx/tools/calendar-mcp-config.json
+tools:
+  - mcp__calendar__list_today
+```
+
+---
+
+## 9. Telegram Bot
+
+cx includes a Telegram bot (`cx/tools/telegram-bot.js`) that lets you control your agents via natural language messages from your phone.
+
+### 9.1 What It Does
+
+The bot uses long-polling to receive messages and interprets them via Claude Haiku. You can send natural language like "check my emails" or "what's the gmail watcher status?" and the bot translates that into cx commands.
+
+**Capabilities:**
+
+- **Status & listing** — "status", "list agents", "what's running?"
+- **Logs** — "show gmail-watcher logs", "last run output"
+- **Memory** — "what does gmail-watcher remember?"
+- **Control** — "start gmail-watcher", "pause calendar-checker", "resume all"
+- **Persistent notes** — "remember that I'm on vacation until Friday"
+- **Voice messages** — Transcribes voice notes and processes them as commands
+- **Research mode** — "research best practices for X" (triggers a longer Claude run)
+
+### 9.2 Setup
+
+The bot reads its configuration from `~/.config/cx/config.yaml`:
+
+```yaml
+notifications:
+  telegram:
+    bot_token: "YOUR_BOT_TOKEN"
+    default_chat_id: "YOUR_CHAT_ID"
+```
+
+1. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram
+2. Copy the bot token to `config.yaml`
+3. Send a message to your bot, then use the Telegram API to find your chat ID
+4. Set `default_chat_id` in `config.yaml`
+
+### 9.3 Running the Bot
+
+```bash
+# Direct
+node cx/tools/telegram-bot.js
+
+# Via pm2 (recommended for production)
+pm2 start cx/tools/telegram-bot.js --name cx-telegram-bot
+
+# Via systemd
+# Create a service file pointing to the script
+```
+
+The bot runs as a separate long-lived process alongside the cx daemon.
+
+---
+
+## 10. Troubleshooting
 
 ### Agent isn't running on schedule
 

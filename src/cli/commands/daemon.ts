@@ -1,10 +1,8 @@
 import { Command } from 'commander';
 import { fork } from 'node:child_process';
 import { readFile, unlink } from 'node:fs/promises';
+import { realpathSync, watch } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createReadStream } from 'node:fs';
-import { watch } from 'node:fs';
 import chalk from 'chalk';
 import { getPidFile, getSocketPath, getDaemonLogFile, loadConfig } from '../../core/config.js';
 
@@ -22,7 +20,7 @@ daemonCommand
     }
 
     // Find the daemon entry point relative to this file
-    const daemonPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'daemon', 'index.js');
+    const daemonPath = join(dirname(dirname(realpathSync(process.argv[1]))), 'daemon', 'index.js');
 
     const child = fork(daemonPath, [], {
       detached: true,
@@ -72,7 +70,7 @@ daemonCommand
     try { await unlink(getSocketPath()); } catch {}
 
     // Start
-    const daemonPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'daemon', 'index.js');
+    const daemonPath = join(dirname(dirname(realpathSync(process.argv[1]))), 'daemon', 'index.js');
     const child = fork(daemonPath, [], {
       detached: true,
       stdio: 'ignore',

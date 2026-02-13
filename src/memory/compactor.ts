@@ -53,7 +53,6 @@ export async function compactMemory(
     claudePath,
     prompt,
     model: compactionModel,
-    maxBudget: 0.05,
     systemPrompt: 'You are a memory compaction assistant. Summarize concisely while preserving important information.',
   });
 
