@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cx — Claude Extender | Autonomous Agent Management for Claude Code</title>
+  <meta name="description" content="Open-source CLI for managing autonomous Claude Code agents. Define agents as markdown files with scheduled, watcher, and persistent modes. Memory, cost tracking, and MCP tools built in.">
+  <link rel="canonical" href="https://wbnns.github.io/cx/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="cx — Claude Extender">
+  <meta property="og:description" content="Autonomous agent management for Claude Code. Define agents as markdown files. Schedule them, trigger them on events, or run them as persistent sessions.">
+  <meta property="og:url" content="https://wbnns.github.io/cx/">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="cx — Claude Extender">
+  <meta name="twitter:description" content="Autonomous agent management for Claude Code. Define agents as markdown files. Schedule them, trigger them on events, or run them as persistent sessions.">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "cx — Claude Extender",
+    "description": "Open-source CLI for managing autonomous Claude Code agents with scheduling, memory, cost tracking, and MCP tools.",
+    "url": "https://wbnns.github.io/cx/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS",
+    "license": "https://opensource.org/licenses/MIT",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ════════ 1. Nav ════════ -->
+  <nav class="nav">
+    <div class="container">
+      <a href="#" class="nav-logo">[<span>cx</span>]</a>
+      <button class="nav-hamburger" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#examples">Examples</a></li>
+        <li><a href="#quickstart">Get Started</a></li>
+        <li>
+          <a href="https://github.com/wbnns/cx" target="_blank" rel="noopener" class="github-link">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+            <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 11L11 1M11 1H4M11 1v7"/></svg>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ════════ 2. Hero ════════ -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge fade-in-up">
+        Open Source <span class="dot"></span> MIT License
+      </div>
+
+      <h1 class="fade-in-up"><span class="gradient-text">Autonomous agents</span> for Claude Code</h1>
+
+      <p class="hero-subtitle fade-in-up">Define AI agents as markdown files. Schedule them, trigger them on events, or run them as persistent sessions. Memory, cost tracking, and MCP tools built in.</p>
+
+      <p class="hero-stats fade-in-up"><strong>197 runs</strong> · <strong>$10.18 total cost</strong> · <strong>Zero manual interventions</strong></p>
+
+      <div class="hero-ctas fade-in-up">
+        <a href="#quickstart" class="btn-primary">Get Started</a>
+        <a href="https://github.com/wbnns/cx" target="_blank" rel="noopener" class="btn-outline">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="terminal fade-in-up">
+        <div class="terminal-header">
+          <span class="terminal-dot"></span>
+          <span class="terminal-dot"></span>
+          <span class="terminal-dot"></span>
+          <span class="terminal-title">Terminal</span>
+        </div>
+        <div class="terminal-body" data-copy="git clone https://github.com/wbnns/cx.git && cd cx && npm install && npm run build && sudo npm link">
+          <span class="prompt">$ </span><span class="cmd">git clone https://github.com/wbnns/cx.git</span><br>
+          <span class="prompt">$ </span><span class="cmd">cd cx && npm install && npm run build</span><br>
+          <span class="prompt">$ </span><span class="cmd">sudo npm link</span>
+          <button class="copy-btn" aria-label="Copy to clipboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 3. The Problem ════════ -->
+  <section class="problem-section" id="problem">
+    <div class="container">
+      <div class="section-intro fade-in-up">
+        <p class="section-label">The Problem</p>
+        <h2>Claude Code is powerful but stateless</h2>
+        <p>There are three gaps between "powerful CLI tool" and "autonomous agent."</p>
+      </div>
+
+      <div class="grid-3 fade-in-up">
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>Scheduling</h3>
+          <p>No built-in way to run at 6 AM or when a new email arrives. You need something to manage when agents run, how long they run, and what to do when they fail.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          </div>
+          <h3>Memory</h3>
+          <p>Each session starts from zero. Your email triage agent doesn't remember what it archived yesterday. Agents that run repeatedly need persistent context.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Cost Control</h3>
+          <p>No guardrails when agents run autonomously. How much did this run cost? How do you prevent a runaway agent from burning through your API budget?</p>
+        </div>
+      </div>
+
+      <p class="problem-one-liner fade-in-up">cx fills all three gaps with one primitive: <strong>agents as markdown files.</strong></p>
+    </div>
+  </section>
+
+  <!-- ════════ 4. Opening Story ════════ -->
+  <section class="story-section">
+    <div class="container">
+      <div class="fade-in-up">
+        <p class="section-label">The Result</p>
+      </div>
+
+      <div class="story-card fade-in-up">
+        <div class="story-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span>cx agent: gmail-watcher · completed · 6:02 AM</span>
+        </div>
+        <p class="stat-line"><strong>Processed:</strong> 45 emails</p>
+        <p class="stat-line"><strong>Archived &amp; marked read:</strong> 45</p>
+        <p class="stat-line"><strong>Flagged as TODO:</strong> 1</p>
+        <div class="divider"></div>
+        <p class="alert-title">URGENT — Domain Expiration:</p>
+        <ul class="alert-list">
+          <li>Domain expired yesterday — needs immediate renewal</li>
+          <li>Domain expires in 60 days</li>
+        </ul>
+        <br>
+        <p class="alert-title">Security Alerts:</p>
+        <ul class="alert-list">
+          <li>Google security alerts — app passwords created/used</li>
+          <li>Sign-up attempt using your email</li>
+        </ul>
+        <br>
+        <p class="alert-title">Amazon:</p>
+        <ul class="alert-list">
+          <li>4 order enquiries from customer (seller messages)</li>
+          <li>1 return request</li>
+        </ul>
+      </div>
+
+      <p class="story-caption fade-in-up">Every morning at 6 AM, this runs automatically. By the time you pick up your phone, your inbox is clean.</p>
+    </div>
+  </section>
+
+  <!-- ════════ 5. Features ════════ -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">Features</p>
+        <h2>Everything you need for autonomous agents</h2>
+        <p>Six core capabilities, one CLI. No external dependencies.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Scheduled -->
+        <div class="card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>Scheduled Agents</h3>
+          <p>Cron schedules with timezone support. Daily reports, weekly digests, recurring tasks — on your terms.</p>
+        </div>
+        <!-- Watcher -->
+        <div class="card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <h3>Watcher Agents</h3>
+          <p>Cheap check scripts poll frequently. Claude runs only when triggered. Email monitoring, price alerts, page changes.</p>
+        </div>
+        <!-- Persistent -->
+        <div class="card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg>
+          </div>
+          <h3>Persistent Agents</h3>
+          <p>Long-running sessions with heartbeats and checkpoints. Restart policies. Build state over time.</p>
+        </div>
+        <!-- Memory -->
+        <div class="card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 019 9c0 3.88-3.08 7.13-5.42 8.78a2.06 2.06 0 01-2.16.12A11.3 11.3 0 0112 19a11.3 11.3 0 01-1.42.9 2.06 2.06 0 01-2.16-.12C6.08 18.13 3 14.88 3 11a9 9 0 019-9z"/><path d="M9 11a3 3 0 106 0"/></svg>
+          </div>
+          <h3>Persistent Memory</h3>
+          <p>Markdown-based memory survives between runs. Auto-compaction keeps context focused. Persistent notes for long-term facts.</p>
+        </div>
+        <!-- Cost -->
+        <div class="card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <h3>Cost Tracking</h3>
+          <p>Every run logged in USD. Per-run limits, daily and monthly budgets. Alerts before limits hit.</p>
+        </div>
+        <!-- MCP -->
+        <div class="card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg>
+          </div>
+          <h3>MCP Tools</h3>
+          <p>Give agents tools via Model Context Protocol. Gmail, calendars, databases — your code, your machine, your credentials.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 6. Agents Are Just Markdown ════════ -->
+  <section class="showcase-section" id="agents-as-markdown">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">The Primitive</p>
+        <h2>Agents are just markdown</h2>
+        <p>One file defines everything: schedule, tools, memory, cost limits, and plain-English instructions.</p>
+      </div>
+
+      <div class="showcase-wrapper fade-in-up">
+        <div class="showcase-terminal">
+          <div class="terminal-header">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-tab">gmail-watcher.md</span>
+          </div>
+          <div class="showcase-code">
+<span class="line"><span class="syn-delim">---</span></span>
+<span class="line"><span class="syn-key">name:</span> <span class="syn-str">gmail-watcher</span></span>
+<span class="line"><span class="syn-key">type:</span> <span class="syn-str">agent</span></span>
+<span class="line"><span class="syn-key">execution:</span></span>
+<span class="line">  <span class="syn-key">mode:</span> <span class="syn-str">scheduled</span></span>
+<span class="line">  <span class="syn-key">schedule:</span></span>
+<span class="line">    <span class="syn-key">expression:</span> <span class="syn-str">'0 6 * * *'</span></span>
+<span class="line">    <span class="syn-key">type:</span> <span class="syn-str">cron</span></span>
+<span class="line">    <span class="syn-key">timezone:</span> <span class="syn-str">Atlantic/Azores</span></span>
+<span class="line"><span class="syn-key">status:</span> <span class="syn-str">active</span></span>
+<span class="line"><span class="syn-key">tools:</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__list_unread</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__list_inbox</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__read_email</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__archive</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__mark_read</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__flag</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-str">mcp__gmail__trash</span></span>
+<span class="line"><span class="syn-key">notifications:</span></span>
+<span class="line">  <span class="syn-bullet">-</span> <span class="syn-key">channel:</span> <span class="syn-str">telegram</span></span>
+<span class="line">    <span class="syn-key">events:</span> [<span class="syn-str">completion</span>, <span class="syn-str">failure</span>]</span>
+<span class="line"><span class="syn-key">memory:</span></span>
+<span class="line">  <span class="syn-key">enabled:</span> <span class="syn-bool">true</span></span>
+<span class="line"><span class="syn-key">env_ref:</span> <span class="syn-str">email</span></span>
+<span class="line"><span class="syn-key">mcp_config:</span> <span class="syn-str">./cx/tools/gmail-mcp-config.json</span></span>
+<span class="line"><span class="syn-key">total_runs:</span> <span class="syn-num">197</span></span>
+<span class="line"><span class="syn-key">total_cost_usd:</span> <span class="syn-num">10.18</span></span>
+<span class="line"><span class="syn-key">last_run:</span> <span class="syn-str">'2026-02-13T10:31:39Z'</span></span>
+<span class="line"><span class="syn-key">last_status:</span> <span class="syn-str">success</span></span>
+<span class="line"><span class="syn-delim">---</span></span>
+<span class="line"></span>
+<span class="line"><span class="syn-heading"># Gmail Inbox Triage Agent</span></span>
+<span class="line"></span>
+<span class="line">You are an autonomous inbox triage agent.</span>
+<span class="line">When triggered, you have unread emails</span>
+<span class="line">to process.</span>
+<span class="line"></span>
+<span class="line"><span class="syn-heading">## Workflow</span></span>
+<span class="line"></span>
+<span class="line">1. Call `list_unread` to get all unread</span>
+<span class="line">   emails with snippets.</span>
+<span class="line">2. Categorize each email.</span>
+<span class="line">3. Execute batch actions — group UIDs</span>
+<span class="line">   by action to minimize tool calls.</span>
+<span class="line">4. Output a concise summary.</span>
+          </div>
+        </div>
+
+        <div class="showcase-annotations">
+          <div class="annotation">
+            <p class="annotation-label">Cron Schedule</p>
+            <p>Runs daily at 6 AM with timezone support. The daemon checks every 30 seconds.</p>
+          </div>
+          <div class="annotation">
+            <p class="annotation-label">MCP Tools</p>
+            <p>Seven Gmail tools via Model Context Protocol. Your server, your code, your credentials.</p>
+          </div>
+          <div class="annotation">
+            <p class="annotation-label">Cost Tracking</p>
+            <p>197 runs at $10.18 total — automatically logged. Per-run and daily limits available.</p>
+          </div>
+          <div class="annotation">
+            <p class="annotation-label">Plain English</p>
+            <p>The markdown body is the agent's instructions. No DSL, no config language — just prose.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 7. How It Works ════════ -->
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">Architecture</p>
+        <h2>How it works</h2>
+        <p>From markdown file to autonomous execution in five steps.</p>
+      </div>
+
+      <div class="steps fade-in-up">
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Define</h3>
+          <p>Write an agent as markdown with YAML config</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+          </div>
+          <h3>Daemon Ticks</h3>
+          <p>Background loop checks schedules and watchers every 30s</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          </div>
+          <h3>Context Built</h3>
+          <p>Instructions + memory + secrets assembled into prompt</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          </div>
+          <h3>Claude Executes</h3>
+          <p>Spawns <code>claude -p</code> with MCP tools, runs the task</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <h3>Results Logged</h3>
+          <p>Run log, memory update, cost tracked, notification sent</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 8. What You Could Build ════════ -->
+  <section class="examples-section" id="examples">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">Use Cases</p>
+        <h2>What you could build</h2>
+        <p>Real-world agent patterns — each defined in a single markdown file.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card example-card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h3>GitHub Issue Triage</h3>
+          <p>Auto-label bugs, feature requests, and duplicates. Post helpful replies from codebase context.</p>
+          <div class="example-yaml">
+<span class="syn-key">mode:</span> <span class="syn-str">watcher</span>
+<span class="syn-key">poll_interval:</span> <span class="syn-num">300</span><span class="syn-str">s</span>
+<span class="syn-key">tools:</span> <span class="syn-str">github__list_issues,</span>
+       <span class="syn-str">github__add_label,</span>
+       <span class="syn-str">github__post_comment</span>
+          </div>
+        </div>
+        <div class="card example-card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 01-9 9"/></svg>
+          </div>
+          <h3>Auto PR Opener</h3>
+          <p>Monitor "auto-fix" issues, write code, open PRs with cost limits per run.</p>
+          <div class="example-yaml">
+<span class="syn-key">mode:</span> <span class="syn-str">watcher</span>
+<span class="syn-key">cooldown:</span> <span class="syn-num">3600</span><span class="syn-str">s</span>
+<span class="syn-key">max_cost:</span> <span class="syn-num">$1.00</span>
+<span class="syn-key">tools:</span> <span class="syn-str">github__get_issue,</span>
+       <span class="syn-str">github__create_branch,</span>
+       <span class="syn-str">github__open_pr</span>
+          </div>
+        </div>
+        <div class="card example-card fade-in-up">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <h3>Project Standup</h3>
+          <p>Daily standup from Linear/Jira. Flag stale issues, update statuses automatically.</p>
+          <div class="example-yaml">
+<span class="syn-key">mode:</span> <span class="syn-str">scheduled</span>
+<span class="syn-key">cron:</span> <span class="syn-str">"0 9 * * 1-5"</span>
+<span class="syn-key">timezone:</span> <span class="syn-str">America/New_York</span>
+<span class="syn-key">tools:</span> <span class="syn-str">linear__list_assigned,</span>
+       <span class="syn-str">linear__update_status</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 9. Comparison Table ════════ -->
+  <section class="comparison-section" id="comparison">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">Comparison</p>
+        <h2>Different tools for different problems</h2>
+        <p>Not confrontational — just different architectures for different goals.</p>
+      </div>
+
+      <div class="comparison-table-wrapper fade-in-up">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>OpenClaw</th>
+              <th>cx</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Scope</td>
+              <td>General-purpose assistant</td>
+              <td class="cx-col">Agent management for Claude Code</td>
+            </tr>
+            <tr>
+              <td>State</td>
+              <td>Database sessions</td>
+              <td class="cx-col">Markdown files — git-diffable</td>
+            </tr>
+            <tr>
+              <td>Tools</td>
+              <td>Community marketplace</td>
+              <td class="cx-col">MCP servers you write and audit</td>
+            </tr>
+            <tr>
+              <td>Cost</td>
+              <td>No tracking</td>
+              <td class="cx-col">Per-run limits, daily/monthly budgets</td>
+            </tr>
+            <tr>
+              <td>Model</td>
+              <td>Multi-model</td>
+              <td class="cx-col">Claude-native (wraps CLI directly)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="comparison-tagline fade-in-up">Not a Swiss Army knife vs. scalpel — more like a Swiss Army knife vs. a CNC machine.</p>
+    </div>
+  </section>
+
+  <!-- ════════ 10. Quick Start ════════ -->
+  <section class="quickstart-section" id="quickstart">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">Get Started</p>
+        <h2>Up and running in four steps</h2>
+        <p>From zero to your first autonomous agent.</p>
+      </div>
+
+      <div class="quickstart-steps">
+        <div class="qs-step fade-in-up">
+          <div class="qs-step-header">
+            <span class="qs-step-num">1</span>
+            <h3>Install from source</h3>
+          </div>
+          <div class="qs-code" data-copy="git clone https://github.com/wbnns/cx.git && cd cx && npm install && npm run build && sudo npm link">
+            <span class="prompt">$ </span>git clone https://github.com/wbnns/cx.git<br>
+            <span class="prompt">$ </span>cd cx && npm install<br>
+            <span class="prompt">$ </span>npm run build && sudo npm link
+            <button class="copy-btn" aria-label="Copy to clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="qs-step fade-in-up">
+          <div class="qs-step-header">
+            <span class="qs-step-num">2</span>
+            <h3>Initialize cx</h3>
+          </div>
+          <div class="qs-code" data-copy="cd ~/my-project && cx init">
+            <span class="prompt">$ </span>cd ~/my-project<br>
+            <span class="prompt">$ </span>cx init
+            <button class="copy-btn" aria-label="Copy to clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="qs-step fade-in-up">
+          <div class="qs-step-header">
+            <span class="qs-step-num">3</span>
+            <h3>Configure secrets</h3>
+          </div>
+          <div class="qs-code" data-copy="cx secrets set global ANTHROPIC_API_KEY sk-ant-...">
+            <span class="prompt">$ </span>cx secrets set global \<br>
+            &nbsp;&nbsp;ANTHROPIC_API_KEY sk-ant-...
+            <button class="copy-btn" aria-label="Copy to clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="qs-step fade-in-up">
+          <div class="qs-step-header">
+            <span class="qs-step-num">4</span>
+            <h3>Create and run</h3>
+          </div>
+          <div class="qs-code" data-copy="cx create my-agent --mode scheduled && cx edit my-agent && cx daemon start">
+            <span class="prompt">$ </span>cx create my-agent --mode scheduled<br>
+            <span class="prompt">$ </span>cx edit my-agent<br>
+            <span class="prompt">$ </span>cx daemon start
+            <button class="copy-btn" aria-label="Copy to clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quickstart-link fade-in-up">
+        <a href="user-guide.md">Read the full User Guide &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 11. CLI Commands ════════ -->
+  <section class="cli-section" id="cli">
+    <div class="container">
+      <div class="section-header fade-in-up">
+        <p class="section-label">Reference</p>
+        <h2>CLI commands</h2>
+        <p>18 commands, grouped by what they do.</p>
+      </div>
+
+      <div class="cli-table-wrapper fade-in-up">
+        <table class="cli-table">
+          <tr class="cli-group-header"><td colspan="2">Setup</td></tr>
+          <tr><td>cx init</td><td>Initialize cx in current directory</td></tr>
+          <tr><td>cx install-deps</td><td>Install watcher dependencies</td></tr>
+
+          <tr class="cli-group-header"><td colspan="2">Agent Management</td></tr>
+          <tr><td>cx create &lt;name&gt;</td><td>Create a new agent</td></tr>
+          <tr><td>cx edit &lt;name&gt;</td><td>Open agent file in $EDITOR</td></tr>
+          <tr><td>cx list</td><td>List all agents</td></tr>
+          <tr><td>cx status</td><td>Quick status overview</td></tr>
+          <tr><td>cx delete &lt;name&gt;</td><td>Delete an agent (moves to .trash/)</td></tr>
+
+          <tr class="cli-group-header"><td colspan="2">Execution</td></tr>
+          <tr><td>cx start &lt;name&gt;</td><td>Manually trigger an agent</td></tr>
+          <tr><td>cx stop &lt;name&gt;</td><td>Stop a running agent</td></tr>
+          <tr><td>cx pause &lt;name&gt;</td><td>Pause an agent</td></tr>
+          <tr><td>cx resume &lt;name&gt;</td><td>Resume a paused agent</td></tr>
+          <tr><td>cx daemon</td><td>Manage background daemon</td></tr>
+          <tr><td>cx test-watcher &lt;name&gt;</td><td>Test a watcher script</td></tr>
+
+          <tr class="cli-group-header"><td colspan="2">Data &amp; Debugging</td></tr>
+          <tr><td>cx logs &lt;name&gt;</td><td>View run logs</td></tr>
+          <tr><td>cx memory &lt;name&gt;</td><td>View agent memory</td></tr>
+          <tr><td>cx compact &lt;name&gt;</td><td>Trigger memory compaction</td></tr>
+          <tr><td>cx costs</td><td>View cost breakdown</td></tr>
+          <tr><td>cx secrets</td><td>Manage secret groups</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 12. Footer ════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-brand">
+        <h4>cx — Claude Extender</h4>
+        <p>Autonomous agent management<br>for Claude Code</p>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-tertiary);">MIT License</p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/wbnns/cx" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="user-guide.md">Documentation</a></li>
+        <li><a href="https://github.com/wbnns/cx/issues" target="_blank" rel="noopener">Issues</a></li>
+      </ul>
+      <div class="footer-right">
+        <p>Built for Claude Code</p>
+        <p class="footer-thesis">Your agents are markdown. Your logs are markdown.<br>It's markdown all the way down.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
