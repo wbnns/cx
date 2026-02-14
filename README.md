@@ -282,6 +282,10 @@ compaction:
 
 See the full [User Guide](docs/user-guide.md) for detailed documentation including watcher script examples, memory management, the complete configuration reference, and troubleshooting.
 
+## Disclaimer
+
+cx is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Anthropic, PBC. Claude and Claude Code are trademarks of Anthropic, PBC.
+
 ## License
 
 MIT

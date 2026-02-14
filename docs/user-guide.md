@@ -1134,3 +1134,9 @@ The bot runs as a separate long-lived process alongside the cx daemon.
 1. Verify the secret group exists: `cx secrets list`
 2. Check that `env_ref` in the agent frontmatter matches the group name.
 3. Verify the specific key: `cx secrets get <group> <KEY>`
+
+---
+
+## Disclaimer
+
+cx is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Anthropic, PBC. Claude and Claude Code are trademarks of Anthropic, PBC.
