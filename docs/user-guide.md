@@ -32,7 +32,7 @@
 
 ```bash
 # Install from source
-git clone <repo-url> && cd cx
+git clone https://github.com/wbnns/cx.git && cd cx
 npm install && npm run build && sudo npm link
 
 # Verify installation
