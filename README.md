@@ -1,4 +1,4 @@
-# cx — Claude Extender
+# cx: Claude Extender
 
 Autonomous agent management for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Create agents that run on schedules, watch for conditions, or maintain persistent sessions — all defined as markdown files in your **cx directory**.
 
