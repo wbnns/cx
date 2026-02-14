@@ -1070,6 +1070,22 @@ section {
   font-style: italic;
 }
 
+.footer-disclaimer {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  text-align: center;
+}
+
+.footer-disclaimer p {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
 /* ── Animations ──────────────────────────────────────────── */
 .fade-in-up {
   opacity: 0;
