@@ -15,7 +15,8 @@
 7. [Notifications](#7-notifications)
 8. [MCP Tool Servers](#8-mcp-tool-servers)
 9. [Telegram Bot](#9-telegram-bot)
-10. [Troubleshooting](#10-troubleshooting)
+10. [Issue Agent (Linear Agent)](#10-issue-agent-linear-agent)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -1091,7 +1092,154 @@ The bot runs as a separate long-lived process alongside the cx daemon.
 
 ---
 
-## 10. Troubleshooting
+## 10. Issue Agent (Linear Agent)
+
+The Issue Agent is a standalone service that turns issue tracker links into completed PRs. Send a Linear issue URL to the Telegram bot, and the service handles everything: worktree creation, implementation, PR creation, review feedback remediation, and CI fixes.
+
+### 10.1 How It Works
+
+```
+User sends issue URL to Telegram bot
+        │
+        ▼
+telegram-bot.js detects the URL pattern
+        │ POST http://localhost:7483/trigger
+        ▼
+linear-agent.mjs (systemd service)
+        │
+        ├─ Create git worktree from main
+        ├─ Fetch issue details via tracker API
+        ├─ Symlink pre-installed node_modules
+        ├─ Spawn Claude (opus, 45 min timeout)
+        │   └─ Read issue, implement changes, push, open PR
+        ├─ Notify via Telegram: "PR opened: <url>"
+        │
+        ├─ Feedback loop (every 10 min):
+        │   ├─ Fetch review + issue comments via GitHub API
+        │   ├─ Filter out bot comments (vercel, github-actions)
+        │   ├─ If new actionable comments:
+        │   │   ├─ Spawn Claude to remediate (15 min timeout)
+        │   │   └─ If greptile commented → post "@greptileai review"
+        │   └─ If no new comments → exit loop
+        │
+        ├─ CI check (10 min after feedback settles):
+        │   ├─ Fetch PR check status via gh
+        │   ├─ If failures related to PR → Claude fixes, push
+        │   │   └─ Post "@greptileai review" → re-enter feedback loop
+        │   └─ If CI green or failures unrelated → done
+        │
+        └─ Notify: "complete — all feedback addressed"
+```
+
+### 10.2 Setup
+
+The service requires:
+
+- **A git repository** with worktree support (the target codebase)
+- **GitHub CLI (`gh`)** authenticated for PR creation and API calls
+- **An issue tracker API key** (Linear API key, or equivalent for other trackers)
+- **The Telegram bot** already running (to receive triggers and send notifications)
+
+**Files:**
+
+| File | Purpose |
+|------|---------|
+| `cx/services/linear-agent.mjs` | The service itself |
+| `/etc/systemd/system/cx-linear-agent.service` | systemd unit |
+| `cx/tools/telegram-bot.js` | Modified to detect issue URLs |
+
+**Start the service:**
+
+```bash
+sudo systemctl enable cx-linear-agent
+sudo systemctl start cx-linear-agent
+
+# Restart the Telegram bot to pick up the URL detection hook
+sudo systemctl restart cx-telegram-bot
+```
+
+### 10.3 Configuration
+
+Key constants at the top of `linear-agent.mjs`:
+
+| Constant | Default | Description |
+|----------|---------|-------------|
+| `ZORA_REPO` | `/home/deploy/zora` | Path to the main git repository |
+| `WORKTREE_ROOT` | `/home/deploy/zora-worktrees` | Where worktrees are created |
+| `PORT` | `7483` | HTTP port for trigger endpoint |
+| `INITIAL_TIMEOUT_MS` | 45 min | Max time for initial Claude session |
+| `REMEDIATION_TIMEOUT_MS` | 15 min | Max time for remediation sessions |
+| `FEEDBACK_INTERVAL_MS` | 10 min | How often to check for new comments |
+| `CI_SETTLE_DELAY_MS` | 10 min | Wait time before checking CI |
+| `WORKTREE_MAX_AGE_MS` | 7 days | Auto-cleanup threshold for old worktrees |
+| `LINEAR_API_KEY` | — | API key for fetching issue details |
+
+### 10.4 Usage
+
+Send a Linear issue link to the Telegram bot:
+
+```
+https://linear.app/myorg/issue/PROJ-123
+```
+
+The bot responds with a confirmation and the service takes over. You'll receive Telegram notifications at each milestone.
+
+Multiple issues can be processed concurrently — each gets its own worktree and Claude session. Duplicate triggers for the same issue are detected and rejected.
+
+### 10.5 Adapting for Other Issue Trackers
+
+The service is designed around Linear but the pattern is generic. To use a different tracker:
+
+1. **URL detection** — Update the regex in `telegram-bot.js` to match your tracker's URL format (e.g., `github.com/.*/issues/\d+` for GitHub Issues)
+2. **Issue fetching** — Replace the `fetchLinearIssue()` function with an API call to your tracker (GitHub REST API, Jira API, etc.)
+3. **Issue ID format** — Adjust the `issueId` parsing and branch naming to match your tracker's conventions
+
+For example, to use GitHub Issues instead of Linear:
+
+```javascript
+// In telegram-bot.js — detect GitHub issue URLs
+const ghMatch = text.match(
+  /https:\/\/github\.com\/([^/]+\/[^/]+)\/issues\/(\d+)/i
+);
+
+// In linear-agent.mjs — fetch via GitHub API
+async function fetchGitHubIssue(repo, number) {
+  const result = execFileSync('gh', [
+    'api', `repos/${repo}/issues/${number}`,
+  ], { encoding: 'utf-8' });
+  const issue = JSON.parse(result);
+  return `## #${issue.number}: ${issue.title}\n\n${issue.body}`;
+}
+```
+
+### 10.6 Resource Considerations
+
+Each Claude session uses ~250-300MB of RAM. On machines with limited memory:
+
+- **Add swap** — The service can trigger multiple concurrent Claude sessions plus `pnpm` builds. A 4GB swap file prevents OOM kills.
+- **Pre-install dependencies** — The service symlinks `node_modules` from the main repo into each worktree to avoid expensive `pnpm install` runs.
+- **Worktree cleanup** — Old worktrees are automatically removed after 7 days. The cleanup runs on startup and every 6 hours.
+
+### 10.7 Monitoring
+
+```bash
+# Service status
+sudo systemctl status cx-linear-agent
+
+# Live logs
+sudo journalctl -u cx-linear-agent -f
+
+# Health check
+curl http://localhost:7483/health
+# {"status":"ok","activeJobs":1}
+
+# Check active Claude processes
+ps aux | grep claude
+```
+
+---
+
+## 11. Troubleshooting
 
 ### Agent isn't running on schedule
 

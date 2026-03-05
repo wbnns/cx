@@ -9,6 +9,7 @@ cx runs a background daemon that manages your agents:
 - **Scheduled agents** run on cron schedules (daily surf report, weekly digest, etc.)
 - **Watcher agents** run lightweight check scripts and trigger Claude only when conditions are met (new emails, page changes, price alerts)
 - **Persistent agents** maintain long-running sessions with heartbeats and checkpoints
+- **Issue agents** receive issue links (Linear, GitHub Issues, etc.) via Telegram, spin up Claude in a git worktree, open PRs, and autonomously remediate reviewer feedback until the PR is clean
 
 Every agent is a markdown file with YAML frontmatter. Instructions go in the body, configuration goes in the frontmatter. Run logs, memory, and costs are all stored as markdown — browsable as plain markdown with full backlinks and search.
 
@@ -72,7 +73,7 @@ Summarize anything important and archive the rest.
 
 The `name` field provides a human-readable identifier. The `mcp_config` field points to a JSON file that tells Claude Code which MCP tool servers to start. Tools prefixed with `mcp__<server>__` correspond to tools exposed by those servers — see [MCP Tools](#mcp-tools) below.
 
-## Three Agent Modes
+## Four Agent Modes
 
 ### Scheduled
 
@@ -125,6 +126,31 @@ execution:
     restart_policy: on_failure
     max_session_duration_hours: 24
 ```
+
+### Issue (Linear Agent)
+
+Triggered by sending an issue link (e.g., Linear, GitHub Issues) to the Telegram bot. A standalone service creates a git worktree, fetches the issue details, spawns Claude to implement the work, opens a PR, and then monitors for reviewer feedback — remediating comments and fixing CI failures in a loop until the PR is clean.
+
+```
+User sends Linear URL to Telegram
+        │
+        ▼
+telegram-bot.js detects issue URL
+        │ POST to linear-agent service
+        ▼
+linear-agent.mjs
+        ├─ Create git worktree from main
+        ├─ Fetch issue details via API
+        ├─ Spawn Claude to implement the work
+        ├─ Detect and report PR URL
+        ├─ Monitor for review comments (every 10 min)
+        │   └─ Remediate feedback, re-request reviews
+        ├─ Check CI after feedback is quiet
+        │   └─ Fix PR-related failures, re-request reviews
+        └─ Notify completion via Telegram
+```
+
+The service runs as a systemd unit (`cx-linear-agent.service`) and handles concurrent jobs. While this implementation uses Linear, the pattern works with any issue tracker — the issue-fetching function can be swapped for GitHub Issues, Jira, or any system with an API.
 
 ## MCP Tools
 
@@ -239,6 +265,7 @@ resource_limits:
 my-project/
   cx/
     agents/           # Agent markdown files
+    services/         # Standalone agent services (e.g., linear-agent.mjs)
     tools/            # MCP servers, bots, and supporting scripts
     watchers/         # Watcher check scripts
     memory/           # Agent memory (current + archives)
